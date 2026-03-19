@@ -74,7 +74,7 @@ The app checks the USFA RSS feed once every 24 hours. If a newer `pubDate` is fo
 
 - Never commit real API keys to GitHub.
 - `.Renviron` is ignored via `.gitignore`.
-- The interactive state map uses the `plotly` and `maps` packages. Connect Cloud will install these from `manifest.json` during publish.
+- The interactive state map uses a lightweight hover tooltip built with `plotOutput()` and state center coordinates from base R.
 
 ## Project Structure
 

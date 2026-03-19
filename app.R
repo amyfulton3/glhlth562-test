@@ -8,8 +8,6 @@ library(lubridate)
 library(httr)
 library(jsonlite)
 library(xml2)
-library(plotly)
-library(maps)
 
 # ---- Configuration ----
 data_path <- "/Users/amyfulton/Downloads/ff_data.csv"
@@ -351,6 +349,13 @@ state_to_region <- function(state_abbr) {
   )
 }
 
+state_centers <- data.frame(
+  state = state.abb,
+  x = state.center$x,
+  y = state.center$y,
+  stringsAsFactors = FALSE
+)
+
 # ---- Training plan parsing ----
 parse_training_plan <- function(text) {
   if (is.null(text) || is.na(text) || str_trim(text) == "") return(NULL)
@@ -475,6 +480,7 @@ ui <- fluidPage(
       .global-spinner.show { display: inline-block; }
       .btn-inline { display: inline-flex; align-items: center; gap: 8px; }
       .inline-spinner { width: 16px; height: 16px; border: 2px solid #2a2a2f; border-top-color: #ffb347; border-radius: 50%; animation: spin 0.8s linear infinite; }
+      .map-tooltip { background: rgba(20, 20, 24, 0.92); color: #f7f3ef; padding: 8px 10px; border-radius: 8px; border: 1px solid #2a2a2f; font-size: 12px; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35); pointer-events: none; }
       @keyframes spin { to { transform: rotate(360deg); } }
     "))
     ,
@@ -576,7 +582,11 @@ ui <- fluidPage(
             "Interactive map showing the most common fatality cause in each state based on selected incident types.",
             style = "color: var(--muted);"
           ),
-          plotlyOutput("cause_map", height = "420px")
+          tags$div(
+            style = "position: relative;",
+            plotOutput("cause_map", height = "420px", hover = hoverOpts("cause_map_hover", delay = 60, delayType = "debounce")),
+            uiOutput("cause_map_hover_info")
+          )
         ),
         tabPanel(
           "Prevention Guidance",
@@ -919,10 +929,10 @@ server <- function(input, output, session) {
       )
   })
 
-  output$cause_map <- renderPlotly({
-    if (is.null(input$incident_types) || length(input$incident_types) == 0) return(NULL)
+  cause_map_data <- reactive({
+    if (is.null(input$incident_types) || length(input$incident_types) == 0) return(tibble())
     df <- data_state()
-    if (nrow(df) == 0) return(NULL)
+    if (nrow(df) == 0) return(tibble())
 
     df <- df %>% filter(!is.na(state), !is.na(cause))
     if (!all(is.na(df$incident_category))) {
@@ -935,42 +945,40 @@ server <- function(input, output, session) {
       slice_head(n = 1) %>%
       ungroup()
 
-    state_lookup <- data.frame(
-      state = state.abb,
-      region = tolower(state.name),
-      stringsAsFactors = FALSE
-    )
-
-    map_df <- maps::map_data("state") %>%
-      left_join(state_lookup, by = "region") %>%
+    state_centers %>%
       left_join(top_cause_by_state, by = "state") %>%
-      mutate(
-        label = ifelse(is.na(cause), "No data", cause),
-        tooltip = paste0(
-          "State: ", toupper(region), "<br>",
-          "Top fatality cause: ", label
-        )
-      )
+      mutate(label = ifelse(is.na(cause), "No data", cause))
+  })
 
-    p <- ggplot(map_df, aes(long, lat, group = group, fill = label, text = tooltip)) +
-      geom_polygon(color = "#2a2a2f", linewidth = 0.2) +
-      coord_fixed(1.3) +
+  output$cause_map <- renderPlot({
+    df <- cause_map_data()
+    if (nrow(df) == 0) return(NULL)
+
+    ggplot(df, aes(x = x, y = y)) +
+      geom_point(color = "#ff6a00", size = 3.4, alpha = 0.85) +
+      coord_quickmap() +
       theme_void() +
       theme(
-        legend.position = "right",
-        legend.text = element_text(color = "#c7c0b8"),
-        legend.title = element_text(color = "#f7f3ef"),
         plot.background = element_rect(fill = "transparent", color = NA),
         panel.background = element_rect(fill = "transparent", color = NA)
-      ) +
-      labs(fill = "Top Cause")
-
-    ggplotly(p, tooltip = "text") %>%
-      layout(
-        plot_bgcolor = "rgba(0,0,0,0)",
-        paper_bgcolor = "rgba(0,0,0,0)",
-        legend = list(font = list(color = "#c7c0b8"))
       )
+  })
+
+  output$cause_map_hover_info <- renderUI({
+    hover <- input$cause_map_hover
+    df <- cause_map_data()
+    if (is.null(hover) || nrow(df) == 0) return(NULL)
+
+    point <- nearPoints(df, hover, xvar = "x", yvar = "y", maxpoints = 1, threshold = 12)
+    if (nrow(point) == 0) return(NULL)
+
+    absolutePanel(
+      left = hover$coords_css$x + 12,
+      top = hover$coords_css$y + 12,
+      class = "map-tooltip",
+      tags$div(strong(point$state)),
+      tags$div(point$label)
+    )
   })
 
   output$guidance <- renderText({
