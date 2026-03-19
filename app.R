@@ -492,14 +492,15 @@ ui <- fluidPage(
     tags$div(
       tags$h1(class = "app-title", "Firefighter Fatality Risk Dashboard"),
       tags$p(class = "app-subtitle", "Auto refreshes daily"),
-      tags$p(class = "app-subtitle", textOutput("last_refreshed"))
+      tags$p(class = "app-subtitle", textOutput("last_refreshed")),
+      tags$p(class = "app-subtitle", textOutput("data_source"))
     )
   ),
 
   sidebarLayout(
     sidebarPanel(
       class = "sidebar",
-      tags$div(textOutput("data_source")),
+      tags$div("Enter your department details"),
       
       actionButton("refresh_data", "Refresh Data Now"),
       radioButtons(
