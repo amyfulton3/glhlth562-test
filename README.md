@@ -68,3 +68,12 @@ If you are deploying via **connect.posit.cloud** with a Git repository:
 4. Root directory: repository root
 
 Make sure `manifest.json` is present in the repo (it is committed).
+
+## Republishing on Connect Cloud
+
+If **Automatically publish on push** is enabled, any push to `main` will republish the app.
+
+If it’s disabled:
+1. Open your app on connect.posit.cloud.
+2. Click **Publish** or **Republish**.
+3. Choose the latest commit from `main`.
