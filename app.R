@@ -8,6 +8,7 @@ library(lubridate)
 library(httr)
 library(jsonlite)
 library(xml2)
+library(shinycssloaders)
 
 # ---- Configuration ----
 data_path <- "/Users/amyfulton/Downloads/ff_data.csv"
@@ -253,7 +254,8 @@ generate_training_plan <- function(region, trends_text, model = default_model) {
   instructions <- paste(
     "Create a 12-month firefighter training plan tailored to the region and trends provided.",
     "Return a numbered list with one monthly training activity per month.",
-    "Each item should be 1-2 sentences and include the training focus and a brief objective."
+    "Each item should be 1-2 sentences and include the training focus and a brief objective.",
+    "Only include training activities that can be supported by the listed available equipment."
   )
 
   input_text <- paste(
@@ -309,6 +311,42 @@ state_to_region <- function(state_abbr) {
     state_abbr %in% west ~ "West",
     TRUE ~ NA_character_
   )
+}
+
+# ---- Training plan parsing ----
+parse_training_plan <- function(text) {
+  if (is.null(text) || is.na(text) || str_trim(text) == "") return(NULL)
+
+  # Normalize whitespace
+  x <- str_replace_all(text, "\\r", "")
+
+  # Split on numbered items (1., 2., 3., etc.)
+  parts <- str_split(x, "\\n?\\s*\\d+\\.\\s*", simplify = TRUE)
+  parts <- parts[parts != ""]
+  if (length(parts) == 0) return(NULL)
+
+  rows <- lapply(parts, function(p) {
+    p <- str_trim(p)
+    # Extract Month title
+    month_match <- str_match(p, "(?i)month\\s*\\d+\\s*:\\s*([^\\n\\*]+)")
+    month_title <- if (!is.na(month_match[1, 2])) str_trim(month_match[1, 2]) else NA_character_
+
+    focus_match <- str_match(p, "(?i)focus\\s*:\\s*([^\\n]+)")
+    focus <- if (!is.na(focus_match[1, 2])) str_trim(focus_match[1, 2]) else NA_character_
+
+    obj_match <- str_match(p, "(?i)objective\\s*:\\s*([^\\n]+)")
+    objective <- if (!is.na(obj_match[1, 2])) str_trim(obj_match[1, 2]) else NA_character_
+
+    list(
+      Month = if (!is.na(month_title)) month_title else str_trim(str_extract(p, "^[^\\n]+")),
+      Focus = focus,
+      Objective = objective
+    )
+  })
+
+  df <- do.call(rbind, lapply(rows, as.data.frame, stringsAsFactors = FALSE))
+  if (nrow(df) == 0) return(NULL)
+  df
 }
 
 # ---- Odds ratios (within fatality records) ----
@@ -490,7 +528,7 @@ ui <- fluidPage(
           plotOutput("cause_plot", height = "260px"),
           h3("Prevention Guidance"),
           textOutput("guidance_status"),
-          textOutput("guidance")
+          withSpinner(textOutput("guidance"))
         ),
         tabPanel(
           "Personnel",
@@ -517,7 +555,7 @@ ui <- fluidPage(
           ),
           actionButton("analyze_reports", "Analyze Incident Reports"),
           textOutput("reports_status"),
-          textOutput("reports_analysis")
+          withSpinner(textOutput("reports_analysis"))
         ),
         tabPanel(
           "Training Plan",
@@ -530,17 +568,17 @@ ui <- fluidPage(
             "training_equipment",
             "Available Training Equipment",
             choices = c(
-              "Smoke Generators & Fluid",
-              "Fire Simulation Props",
-              "Rescue Mannequins",
-              "Hose Lines & Nozzles",
-              "Forcible Entry & Ventilation Tools",
-              "Rescue Tools",
-              "Fitness and Conditioning Equipment"
+              "Forcible Entry Props",
+              "Live-Fire Props",
+              "Search and Rescue",
+              "Hose/Nozzle Handling",
+              "Ventilation Tools",
+              "Physical Conditioning Equipment"
             )
           ),
           actionButton("generate_training", "Generate Training Plan"),
           textOutput("training_status"),
+          withSpinner(tableOutput("training_table")),
           textOutput("training_plan")
         )
       )
@@ -956,8 +994,18 @@ server <- function(input, output, session) {
     training_state()$status
   })
 
+  output$training_table <- renderTable({
+    plan <- training_state()$plan
+    parsed <- parse_training_plan(plan)
+    if (is.null(parsed)) return(NULL)
+    parsed
+  }, striped = TRUE, bordered = TRUE, hover = TRUE)
+
   output$training_plan <- renderText({
-    training_state()$plan
+    plan <- training_state()$plan
+    parsed <- parse_training_plan(plan)
+    if (!is.null(parsed)) return("")
+    plan
   })
 
   observeEvent(input$run_llm, {
