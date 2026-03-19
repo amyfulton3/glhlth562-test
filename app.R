@@ -289,8 +289,16 @@ format_incident_analysis <- function(text) {
 generate_training_plan <- function(region, trends_text, model = default_model) {
   instructions <- paste(
     "Create a 12-month firefighter training plan tailored to the region and trends provided.",
-    "Return a numbered list with one monthly training activity per month.",
-    "Each item should be 1-2 sentences and include the training focus and a brief objective.",
+    "Return exactly 12 items formatted exactly like:",
+    "Month 1: Title",
+    "Focus: ...",
+    "Objective: ...",
+    "Month 2: Title",
+    "Focus: ...",
+    "Objective: ...",
+    "Continue through Month 12 with the same format.",
+    "Keep Focus and Objective to one sentence each.",
+    "Do not add any extra headings or introductory text.",
     "Only include training activities that can be supported by the listed available equipment."
   )
 
@@ -355,9 +363,10 @@ parse_training_plan <- function(text) {
 
   # Normalize whitespace
   x <- str_replace_all(text, "\\r", "")
+  x <- str_replace(x, "^(?i)here is.*?\\n", "")
 
-  # Split on numbered items (1., 2., 3., etc.)
-  parts <- str_split(x, "\\n?\\s*\\d+\\.\\s*", simplify = TRUE)
+  # Split on Month blocks
+  parts <- unlist(str_split(x, "(?i)(?=\\bmonth\\s*\\d+\\s*:)"))
   parts <- parts[parts != ""]
   if (length(parts) == 0) return(NULL)
 
@@ -382,6 +391,7 @@ parse_training_plan <- function(text) {
 
   df <- do.call(rbind, lapply(rows, as.data.frame, stringsAsFactors = FALSE))
   if (nrow(df) == 0) return(NULL)
+  if (all(is.na(df$Focus)) && all(is.na(df$Objective))) return(NULL)
   df
 }
 
