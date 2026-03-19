@@ -578,7 +578,8 @@ ui <- fluidPage(
             "Shows how incident types are over/under-represented in fatality records by personnel type in your selected region. Reference group: overall average. This is not a population risk estimate.",
             style = "color: var(--muted);"
           ),
-          plotOutput("odds_plot", height = "320px")
+          plotOutput("odds_plot", height = "320px"),
+          tags$div(style = "margin-top: 12px;", textOutput("odds_summary"))
         ),
         tabPanel(
           "Prevention Guidance",
@@ -910,6 +911,48 @@ server <- function(input, output, session) {
         legend.title = element_text(color = "#f7f3ef"),
         plot.caption = element_text(color = "#c7c0b8", hjust = 0)
       )
+  })
+
+  output$odds_summary <- renderText({
+    if (is.null(input$incident_types) || length(input$incident_types) == 0) {
+      return("Select at least one incident type to see personnel insights.")
+    }
+    df <- filtered()
+    odds_df <- compute_incident_odds(df, top_n = 6)
+    if (is.null(odds_df) || nrow(odds_df) == 0) {
+      return("No personnel-level patterns available for the current filters.")
+    }
+
+    selected_personnel <- if (!is.null(input$dept_type) && length(input$dept_type) > 0) {
+      input$dept_type
+    } else {
+      character()
+    }
+
+    if (length(selected_personnel) == 0) {
+      return("Select one or more personnel types to see tailored context for your department.")
+    }
+
+    summaries <- lapply(selected_personnel, function(p) {
+      subset <- odds_df %>% filter(department_type == p)
+      if (nrow(subset) == 0) return(NULL)
+
+      higher <- subset %>% arrange(desc(or)) %>% slice(1)
+      lower <- subset %>% arrange(or) %>% slice(1)
+
+      paste0(
+        p, " firefighters have historically experienced more fatalities in ",
+        higher$incident_category, " incidents on average, and fewer in ",
+        lower$incident_category, " incidents (relative to the overall average)."
+      )
+    })
+
+    summaries <- summaries[!vapply(summaries, is.null, logical(1))]
+    if (length(summaries) == 0) {
+      return("No personnel-level patterns available for the current filters.")
+    }
+
+    paste(summaries, collapse = " ")
   })
 
 
