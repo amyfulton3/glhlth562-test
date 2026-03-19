@@ -664,7 +664,6 @@ ui <- fluidPage(
             "Generates a 12-month training plan based on your region and historical fatality trends.",
             style = "color: var(--muted);"
           ),
-          tags$div(class = "card", uiOutput("training_risks")),
           checkboxGroupInput(
             "training_equipment",
             "Available Training Equipment",
@@ -1195,45 +1194,6 @@ server <- function(input, output, session) {
       class = "card",
       if (!is.null(intro$concerns)) tags$p(intro$concerns),
       if (!is.null(intro$priorities)) tags$p(intro$priorities)
-    )
-  })
-
-  output$training_risks <- renderUI({
-    if (is.null(input$incident_types) || length(input$incident_types) == 0) {
-      return(tags$div(
-        class = "card-title",
-        "Top Regional Risks",
-        tags$div("Select at least one incident type to see regional risks.")
-      ))
-    }
-
-    df <- filtered()
-    if (nrow(df) == 0) {
-      return(tags$div(
-        class = "card-title",
-        "Top Regional Risks",
-        tags$div("No records match the current filters.")
-      ))
-    }
-
-    top <- df %>%
-      filter(!is.na(cause)) %>%
-      count(cause, sort = TRUE) %>%
-      slice_head(n = 3)
-
-    if (nrow(top) == 0) {
-      return(tags$div(
-        class = "card-title",
-        "Top Regional Risks",
-        tags$div("No cause data available for the current filters.")
-      ))
-    }
-
-    items <- paste0(top$cause, " (", top$n, ")")
-    tags$div(
-      class = "card-title",
-      "Top Regional Risks (by selected incident types)",
-      tags$ul(lapply(items, tags$li))
     )
   })
 
