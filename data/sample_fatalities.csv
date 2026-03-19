@@ -1,0 +1,11 @@
+year,state,incident_type,cause,department_type,dept_size,narrative
+2021,NC,Structure Fire,Cardiac Event,Mostly Volunteer,25,"Collapse during overhaul; cardiac arrest on scene."
+2022,NC,Vehicle Incident,Trauma,Mostly Volunteer,25,"Apparatus rollover en route to call."
+2020,CA,Wildland,Heat/Overexertion,Career,300,"Extended shift on wildland line; heat exhaustion."
+2019,TX,Structure Fire,Entrapment,Combination,150,"Mayday during interior attack; rapid fire progression."
+2023,FL,Hazmat,Exposure,Career,220,"Chemical exposure during hazmat response."
+2021,WA,EMS,Vehicle Incident,Mostly Volunteer,40,"Ambulance collision at intersection."
+2022,NY,Structure Fire,Cardiac Event,Career,500,"Cardiac event following fireground operations."
+2020,AZ,Wildland,Trauma,Combination,90,"Falling tree strike on wildland incident."
+2018,IL,Structure Fire,Structural Collapse,Career,180,"Partial collapse during search."
+2023,OH,Rescue,Trauma,Mostly Volunteer,60,"Fall from height during technical rescue."
