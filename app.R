@@ -473,6 +473,8 @@ ui <- fluidPage(
       .global-spinner.show { display: inline-block; }
       .btn-inline { display: inline-flex; align-items: center; gap: 8px; }
       .inline-spinner { width: 16px; height: 16px; border: 2px solid #2a2a2f; border-top-color: #ffb347; border-radius: 50%; animation: spin 0.8s linear infinite; }
+      .header-btn { margin-top: 8px; background: #ff6a00; border: none; color: #0b0b0c; font-weight: 600; }
+      .header-btn:hover { background: #ff7e1f; }
       @keyframes spin { to { transform: rotate(360deg); } }
     "))
     ,
@@ -493,7 +495,8 @@ ui <- fluidPage(
       tags$h1(class = "app-title", "Firefighter Fatality Risk Dashboard"),
       tags$p(class = "app-subtitle", "Auto refreshes daily"),
       tags$p(class = "app-subtitle", textOutput("last_refreshed")),
-      tags$p(class = "app-subtitle", textOutput("data_source"))
+      tags$p(class = "app-subtitle", textOutput("data_source")),
+      actionButton("refresh_data", "Refresh Data Now", class = "header-btn")
     )
   ),
 
@@ -501,8 +504,7 @@ ui <- fluidPage(
     sidebarPanel(
       class = "sidebar",
       tags$div("Enter your department details"),
-      
-      actionButton("refresh_data", "Refresh Data Now"),
+
       radioButtons(
         "geo_mode",
         "Location Input",
@@ -860,9 +862,11 @@ server <- function(input, output, session) {
     odds_df <- odds_df %>%
       mutate(
         incident_category = reorder(incident_category, or, FUN = median),
-        legend_group = ifelse(department_type %in% selected_personnel, department_type, "Unselected"),
         is_selected = department_type %in% selected_personnel
-      )
+      ) %>%
+      filter(is_selected)
+
+    if (nrow(odds_df) == 0) return(NULL)
 
     selected_palette <- c(
       "Volunteer" = "#ffb347",
@@ -874,18 +878,18 @@ server <- function(input, output, session) {
       "Part-Time (Paid)" = "#ffa07a",
       "Industrial" = "#ffd166"
     )
-    palette <- c(selected_palette[selected_personnel], "Unselected" = "#6c757d")
+    palette <- selected_palette[selected_personnel]
 
     x_left <- min(odds_df$or, na.rm = TRUE) * 0.85
     x_right <- max(odds_df$or, na.rm = TRUE) * 1.15
 
-    ggplot(odds_df, aes(x = or, y = incident_category, color = legend_group)) +
+    ggplot(odds_df, aes(x = or, y = incident_category, color = department_type)) +
       geom_vline(xintercept = 1, linetype = "dashed", color = "#c7c0b8") +
       geom_segment(aes(x = 1, xend = or, yend = incident_category), linewidth = 0.7, alpha = 0.6) +
       geom_point(aes(size = is_selected, alpha = is_selected), position = position_jitter(height = 0.22, width = 0)) +
       annotate("text", x = x_left, y = -Inf, label = "Less represented in fatality data", vjust = -0.6, hjust = 0, color = "#c7c0b8", size = 3) +
       annotate("text", x = x_right, y = -Inf, label = "More represented in fatality data", vjust = -0.6, hjust = 1, color = "#c7c0b8", size = 3) +
-      scale_color_manual(values = palette, breaks = selected_personnel, na.value = "#c7c0b8") +
+      scale_color_manual(values = palette, breaks = selected_personnel) +
       scale_size_manual(values = c(`TRUE` = 3.2, `FALSE` = 2.2), guide = "none") +
       scale_alpha_manual(values = c(`TRUE` = 1, `FALSE` = 0.6), guide = "none") +
       scale_x_log10() +
