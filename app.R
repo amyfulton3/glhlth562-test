@@ -257,9 +257,16 @@ generate_llm_guidance <- function(summary_text, model = default_model) {
 # ---- LLM: incident report analysis ----
 generate_incident_analysis <- function(region, trends_text, reports_text, model = default_model) {
   instructions <- paste(
-    "You are analyzing firefighter incident reports and highlighting fatality risks.",
-    "Use the region context and historical trends provided.",
-    "Return a short bulleted list of key risks and 2-3 targeted recommendations.",
+    "You are analyzing firefighter incident reports.",
+    "Extract and list specific hazards and risk factors mentioned or implied in the reports.",
+    "Use the region context and historical trends provided to prioritize the risks.",
+    "Return output in this format:",
+    "Hazards & Risk Factors:",
+    "- ...",
+    "- ...",
+    "Recommendations:",
+    "- ...",
+    "- ...",
     "Keep the tone clear and practical for fire department leadership."
   )
 
@@ -828,29 +835,6 @@ server <- function(input, output, session) {
       return()
     }
 
-    sample_df <- df %>%
-      mutate(row_id = row_number()) %>%
-      filter(!is.na(narrative) & !str_detect(narrative, regex("^not available", ignore_case = TRUE))) %>%
-      slice_head(n = 30)
-
-    if (nrow(sample_df) == 0) {
-      llm_state(list(status = "No usable narratives found for LLM analysis.", guidance = NULL))
-      return()
-    }
-
-    results <- sample_df %>% select(row_id, narrative)
-
-    withProgress(message = "Classifying narratives...", value = 0, {
-      results$llm_category <- NA_character_
-      for (i in seq_len(nrow(results))) {
-        incProgress(1 / nrow(results))
-        results$llm_category[i] <- tryCatch(
-          classify_narrative(results$narrative[i]),
-          error = function(e) NA_character_
-        )
-      }
-    })
-
     comment_text <- ifelse(
       is.null(input$dept_comments) || str_trim(input$dept_comments) == "",
       "No additional department comments provided.",
@@ -865,15 +849,9 @@ server <- function(input, output, session) {
 
     cause_counts <- df %>% count(cause, sort = TRUE) %>% slice_head(n = 3)
     incident_counts <- df %>% count(incident_category, sort = TRUE) %>% slice_head(n = 3)
-    llm_counts <- results %>% count(llm_category, sort = TRUE)
 
     cause_text <- paste(paste0(cause_counts$cause, " (", cause_counts$n, ")"), collapse = ", ")
     incident_text <- paste(paste0(incident_counts$incident_category, " (", incident_counts$n, ")"), collapse = ", ")
-    llm_text <- if (nrow(llm_counts) > 0) {
-      paste(paste0(llm_counts$llm_category, " (", llm_counts$n, ")"), collapse = ", ")
-    } else {
-      "No LLM categories detected"
-    }
 
     summary_text <- paste(
       "Region:", region_text,
@@ -881,7 +859,6 @@ server <- function(input, output, session) {
       "Department size:", input$dept_size,
       "Top causes:", cause_text,
       "Top incident types:", incident_text,
-      "LLM narrative categories:", llm_text,
       comment_text
     )
 
