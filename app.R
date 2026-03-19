@@ -553,11 +553,7 @@ ui <- fluidPage(
         selected = c("Structure Fire")
       ),
       tags$div(style = "color: #ffb347; margin-top: 6px;", textOutput("incident_error")),
-      tags$div(
-        class = "btn-inline",
-        actionButton("run_llm", "Generate Prevention Guidance"),
-        conditionalPanel("output.guidance_busy == true", tags$span(class = "inline-spinner"))
-      )
+
     ),
 
     mainPanel(
@@ -573,7 +569,19 @@ ui <- fluidPage(
           plotOutput("incident_mix_plot", height = "300px"),
           h3("Top Causes (Selected Filters)"),
           plotOutput("cause_plot", height = "260px"),
+        ),
+        tabPanel(
+          "Prevention Guidance",
           h3("Prevention Guidance"),
+          tags$p(
+            "Generate tailored prevention guidance based on your region, incident types, department makeup, and challenges.",
+            style = "color: var(--muted);"
+          ),
+          tags$div(
+            class = "btn-inline",
+            actionButton("run_llm", "Generate Prevention Guidance"),
+            conditionalPanel("output.guidance_busy == true", tags$span(class = "inline-spinner"))
+          ),
           textOutput("guidance_status"),
           textOutput("guidance")
         ),
