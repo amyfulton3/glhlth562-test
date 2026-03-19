@@ -862,11 +862,9 @@ server <- function(input, output, session) {
     odds_df <- odds_df %>%
       mutate(
         incident_category = reorder(incident_category, or, FUN = median),
+        legend_group = ifelse(department_type %in% selected_personnel, department_type, "Unselected"),
         is_selected = department_type %in% selected_personnel
-      ) %>%
-      filter(is_selected)
-
-    if (nrow(odds_df) == 0) return(NULL)
+      )
 
     selected_palette <- c(
       "Volunteer" = "#ffb347",
@@ -878,18 +876,18 @@ server <- function(input, output, session) {
       "Part-Time (Paid)" = "#ffa07a",
       "Industrial" = "#ffd166"
     )
-    palette <- selected_palette[selected_personnel]
+    palette <- c(selected_palette[selected_personnel], "Unselected" = "#6c757d")
 
     x_left <- min(odds_df$or, na.rm = TRUE) * 0.85
     x_right <- max(odds_df$or, na.rm = TRUE) * 1.15
 
-    ggplot(odds_df, aes(x = or, y = incident_category, color = department_type)) +
+    ggplot(odds_df, aes(x = or, y = incident_category, color = legend_group)) +
       geom_vline(xintercept = 1, linetype = "dashed", color = "#c7c0b8") +
       geom_segment(aes(x = 1, xend = or, yend = incident_category), linewidth = 0.7, alpha = 0.6) +
       geom_point(aes(size = is_selected, alpha = is_selected), position = position_jitter(height = 0.22, width = 0)) +
       annotate("text", x = x_left, y = -Inf, label = "Less represented in fatality data", vjust = -0.6, hjust = 0, color = "#c7c0b8", size = 3) +
       annotate("text", x = x_right, y = -Inf, label = "More represented in fatality data", vjust = -0.6, hjust = 1, color = "#c7c0b8", size = 3) +
-      scale_color_manual(values = palette, breaks = selected_personnel) +
+      scale_color_manual(values = palette, breaks = selected_personnel, na.value = "#c7c0b8") +
       scale_size_manual(values = c(`TRUE` = 3.2, `FALSE` = 2.2), guide = "none") +
       scale_alpha_manual(values = c(`TRUE` = 1, `FALSE` = 0.6), guide = "none") +
       scale_x_log10() +
