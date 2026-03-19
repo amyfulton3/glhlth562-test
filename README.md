@@ -1,11 +1,57 @@
-# Final Project (Shiny)
+# Firefighter Fatality Risk Dashboard (Shiny)
 
-## Run the app
+## Overview
+
+This is a **data product** (not a static report). It accepts user input about region, department makeup, incident types, and department challenges, then returns **tailored fatality risk summaries** and **LLM‑generated prevention guidance**. It also includes a separate incident‑report analysis workflow and a monthly training plan generator.
+
+## Capabilities (Requirement Checklist)
+
+- **User input (required):** region/state, personnel makeup, incident types, equipment, and department comments.
+- **API integration:** pulls firefighter fatality data from the USFA API feed and CSV endpoints.
+- **GenAI in pipeline:** uses Gemini to generate prevention guidance, incident‑report risk summaries, and a monthly training plan.
+- **Automation:** automatic daily refresh checks via the USFA RSS feed.
+
+## Data Pipeline Documentation
+
+### 1) Data Sources
+
+- **USFA Firefighter Fatalities API (CSV + RSS feed)**  
+  Used for historical fatality records and automated refresh checks.
+
+### 2) Ingestion
+
+- **Packages:** `readr`, `httr`, `xml2`, `dplyr`  
+- **Process:**  
+  - On startup (and daily), the app checks the USFA RSS feed for updates.  
+  - If a newer `pubDate` is found, it downloads the latest CSV and caches it locally in `data/fatalities.csv`.  
+  - If the API is unavailable, it falls back to the cached file or local `ff_data.csv`.
+
+### 3) Processing
+
+- Column normalization, date parsing, and state→region mapping.
+- Incident types are standardized via heuristic classification.
+- Personnel type labels are normalized to fixed categories.
+- Aggregations for:
+  - top causes of death
+  - incident mix over time
+  - odds‑ratio–style comparisons by personnel type
+
+### 4) Outputs
+
+- **Interactive Shiny dashboard** with multiple tabs:
+  - Regional risk summaries + visuals
+  - Personnel risk visualization
+  - Incident report analysis (LLM)
+  - Monthly training plan (LLM + equipment constraints)
+
+### 5) How to Run (Reproducibility)
 
 ```r
-setwd("/Users/amyfulton/final-project")
+setwd("/Users/amyfulton/Desktop/glhlth562-test")
 shiny::runApp()
 ```
+
+Dependencies are captured in `manifest.json` for Connect Cloud.
 
 ## Gemini API key setup
 
@@ -28,6 +74,19 @@ The app checks the USFA RSS feed once every 24 hours. If a newer `pubDate` is fo
 
 - Never commit real API keys to GitHub.
 - `.Renviron` is ignored via `.gitignore`.
+
+## Project Structure
+
+```
+.
+├── app.R
+├── data/
+│   ├── fatalities.csv
+│   └── last_refresh.txt
+├── manifest.json
+├── .github/workflows/deploy-shinyapps.yml
+└── README.md
+```
 
 ## GitHub Actions deployment (Posit Connect)
 
