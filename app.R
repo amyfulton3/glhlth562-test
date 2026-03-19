@@ -60,9 +60,28 @@ normalize_data <- function(df) {
     property_type = if (!is.na(col_property)) as.character(df[[col_property]]) else NA_character_
   )
 
+  out$cause <- str_replace_all(out$cause, regex("^struck\\s*by$", ignore_case = TRUE), "Struck")
+  out$department_type <- normalize_dept_type(out$department_type)
   out$incident_category <- classify_incident(out)
   out$region <- state_to_region(out$state)
   out
+}
+
+# ---- Department type normalization ----
+normalize_dept_type <- function(x) {
+  x <- str_trim(as.character(x))
+  x <- ifelse(is.na(x) | x == "", "Unknown", x)
+  case_when(
+    str_detect(x, regex("volunteer", ignore_case = TRUE)) ~ "Volunteer",
+    str_detect(x, regex("career", ignore_case = TRUE)) ~ "Career",
+    str_detect(x, regex("wildland.*contract|contract.*wildland", ignore_case = TRUE)) ~ "Wildland Contract",
+    str_detect(x, regex("wildland.*full", ignore_case = TRUE)) ~ "Wildland Full-Time",
+    str_detect(x, regex("wildland.*part", ignore_case = TRUE)) ~ "Wildland Part-Time",
+    str_detect(x, regex("paid[- ]?on[- ]?call", ignore_case = TRUE)) ~ "Paid-on-Call",
+    str_detect(x, regex("part[- ]?time", ignore_case = TRUE)) ~ "Part-Time (Paid)",
+    str_detect(x, regex("industrial", ignore_case = TRUE)) ~ "Industrial",
+    TRUE ~ "Unknown"
+  )
 }
 
 # ---- Helpers: date parsing ----
@@ -192,57 +211,7 @@ call_gemini <- function(input_text, instructions, model = default_model) {
   extract_response_text(resp_json)
 }
 
-# ---- LLM: classification categories ----
-llm_categories <- c(
-  "Training Gaps",
-  "Equipment Issues",
-  "Operational Challenges",
-  "Medical/Cardiac",
-  "Vehicle/Traffic",
-  "Collapse/Entrapment",
-  "Hazmat/Exposure",
-  "Wildland",
-  "Other"
-)
-
-# ---- LLM: narrative classification ----
-classify_narrative <- function(text, model = default_model) {
-  if (is.na(text) || str_trim(text) == "" || str_detect(text, regex("^not available", ignore_case = TRUE))) {
-    return(NA_character_)
-  }
-
-  instructions <- paste(
-    "Classify the firefighter fatality narrative into exactly one category from this list:",
-    paste(llm_categories, collapse = ", "),
-    "Return JSON only: {\"category\":\"<one of the list>\"}. Do not add any extra text."
-  )
-
-  out <- call_gemini(text, instructions, model = model)
-
-  # Try strict JSON parsing first
-  parsed <- tryCatch(jsonlite::fromJSON(out), error = function(e) NULL)
-
-  # If the model wrapped JSON in text, try to extract the JSON object
-  if (is.null(parsed) && !is.na(out)) {
-    json_match <- stringr::str_match(out, "\\\\{.*\\\\}")
-    if (!is.na(json_match[1, 1])) {
-      parsed <- tryCatch(jsonlite::fromJSON(json_match[1, 1]), error = function(e) NULL)
-    }
-  }
-
-  if (is.null(parsed) || is.null(parsed$category)) {
-    # Fallback: try to match any known category in the raw response
-    hit <- llm_categories[str_detect(out, regex(paste(llm_categories, collapse = "|"), ignore_case = TRUE))]
-    if (length(hit) > 0) {
-      return(hit[[1]])
-    }
-    return(NA_character_)
-  }
-
-  category <- as.character(parsed$category)
-  if (!category %in% llm_categories) return(NA_character_)
-  category
-}
+## Narrative classification removed per request
 
 # ---- LLM: guidance generation ----
 generate_llm_guidance <- function(summary_text, model = default_model) {
@@ -342,6 +311,51 @@ state_to_region <- function(state_abbr) {
   )
 }
 
+# ---- Odds ratios (within fatality records) ----
+compute_incident_odds <- function(df, top_n = 6) {
+  if (nrow(df) == 0) return(NULL)
+
+  df <- df %>%
+    filter(!is.na(incident_category), !is.na(department_type)) %>%
+    mutate(
+      department_type = str_trim(department_type),
+      incident_category = str_trim(incident_category)
+    ) %>%
+    filter(department_type != "Unknown")
+
+  if (nrow(df) == 0) return(NULL)
+
+  top_inc <- df %>% count(incident_category, sort = TRUE) %>% slice_head(n = top_n) %>% pull(incident_category)
+  df <- df %>% filter(incident_category %in% top_inc)
+
+  counts <- df %>%
+    count(department_type, incident_category, name = "n")
+
+  totals_by_type <- counts %>%
+    group_by(department_type) %>%
+    summarize(total = sum(n), .groups = "drop")
+
+  overall_by_incident <- counts %>%
+    group_by(incident_category) %>%
+    summarize(overall_n = sum(n), .groups = "drop")
+
+  overall_total <- sum(counts$n)
+
+  out <- counts %>%
+    left_join(totals_by_type, by = "department_type") %>%
+    left_join(overall_by_incident, by = "incident_category") %>%
+    mutate(
+      other = total - n,
+      odds = (n + 0.5) / (other + 0.5),
+      overall_other = overall_total - overall_n,
+      overall_odds = (overall_n + 0.5) / (overall_other + 0.5),
+      or = odds / overall_odds
+    )
+
+  if (nrow(out) == 0) return(NULL)
+  out
+}
+
 # ---- UI ----
 ui <- fluidPage(
   tags$head(
@@ -372,6 +386,12 @@ ui <- fluidPage(
       table { color: var(--text); }
       .shiny-output-error-validation { color: #ffb347; }
       .info-box { background: #101012; border: 1px dashed #333; padding: 10px; border-radius: 10px; margin-top: 10px; }
+      .nav-tabs { border-bottom: 1px solid #2a2a2f; }
+      .nav-tabs > li > a { color: var(--muted); background: #111114; border: 1px solid #2a2a2f; margin-right: 6px; border-radius: 8px 8px 0 0; }
+      .nav-tabs > li > a:hover { color: var(--text); background: #1a1a1d; }
+      .nav-tabs > li.active > a,
+      .nav-tabs > li.active > a:hover,
+      .nav-tabs > li.active > a:focus { color: var(--text); background: #1c1c1f; border-bottom-color: transparent; }
     "))
   ),
 
@@ -416,7 +436,20 @@ ui <- fluidPage(
         "input.geo_mode == 'region'",
         selectInput("region", "Region", choices = c("All", "Northeast", "Midwest", "South", "West"))
       ),
-      selectInput("dept_type", "Department Makeup", choices = c("Mostly Volunteer", "Combination", "Career", "Unknown")),
+      checkboxGroupInput(
+        "dept_type",
+        "Department Makeup (Select All That Apply)",
+        choices = c(
+          "Volunteer",
+          "Career",
+          "Wildland Contract",
+          "Wildland Full-Time",
+          "Wildland Part-Time",
+          "Paid-on-Call",
+          "Part-Time (Paid)",
+          "Industrial"
+        )
+      ),
       numericInput("dept_size", "Department Size", value = 50, min = 1),
       tags$div(
         tags$label("Department Challenges / Comments", `for` = "dept_comments"),
@@ -444,7 +477,7 @@ ui <- fluidPage(
       class = "main",
       tabsetPanel(
         tabPanel(
-          "Risk Summary",
+          "Regional Risks",
           h3("Fatality Risk Summary"),
           textOutput("risk_summary"),
           tableOutput("top_causes"),
@@ -456,6 +489,15 @@ ui <- fluidPage(
           h3("Prevention Guidance"),
           textOutput("guidance_status"),
           textOutput("guidance")
+        ),
+        tabPanel(
+          "Personnel",
+          h3("Incident Type Odds by Personnel Type (Your Region)"),
+          tags$p(
+            "Shows how incident types are over/under-represented in fatality records by personnel type in your selected region. Reference group: overall average. This is not a population risk estimate.",
+            style = "color: var(--muted);"
+          ),
+          plotOutput("odds_plot", height = "320px")
         ),
         tabPanel(
           "Incident Reports",
@@ -685,11 +727,80 @@ server <- function(input, output, session) {
       )
   })
 
+  output$odds_plot <- renderPlot({
+    df <- filtered()
+    odds_df <- compute_incident_odds(df, top_n = 6)
+    if (is.null(odds_df) || nrow(odds_df) == 0) return(NULL)
+
+    selected_personnel <- if (!is.null(input$dept_type) && length(input$dept_type) > 0) {
+      input$dept_type
+    } else {
+      character()
+    }
+
+    odds_df <- odds_df %>%
+      mutate(
+        incident_category = reorder(incident_category, or, FUN = median),
+        legend_group = ifelse(department_type %in% selected_personnel, department_type, "Unselected"),
+        is_selected = department_type %in% selected_personnel
+      )
+
+    selected_palette <- c(
+      "Volunteer" = "#ffb347",
+      "Career" = "#ff6a00",
+      "Wildland Contract" = "#f05d23",
+      "Wildland Full-Time" = "#d63230",
+      "Wildland Part-Time" = "#ff8f1f",
+      "Paid-on-Call" = "#f2c94c",
+      "Part-Time (Paid)" = "#ffa07a",
+      "Industrial" = "#ffd166"
+    )
+    palette <- c(selected_palette[selected_personnel], "Unselected" = "#6c757d")
+
+    x_left <- min(odds_df$or, na.rm = TRUE) * 0.85
+    x_right <- max(odds_df$or, na.rm = TRUE) * 1.15
+
+    ggplot(odds_df, aes(x = or, y = incident_category, color = legend_group)) +
+      geom_vline(xintercept = 1, linetype = "dashed", color = "#c7c0b8") +
+      geom_segment(aes(x = 1, xend = or, yend = incident_category), linewidth = 0.7, alpha = 0.6) +
+      geom_point(aes(size = is_selected, alpha = is_selected), position = position_jitter(height = 0.22, width = 0)) +
+      annotate("text", x = x_left, y = -Inf, label = "Less represented in fatality data", vjust = -0.6, hjust = 0, color = "#c7c0b8", size = 3) +
+      annotate("text", x = x_right, y = -Inf, label = "More represented in fatality data", vjust = -0.6, hjust = 1, color = "#c7c0b8", size = 3) +
+      scale_color_manual(values = palette, breaks = selected_personnel, na.value = "#c7c0b8") +
+      scale_size_manual(values = c(`TRUE` = 3.2, `FALSE` = 2.2), guide = "none") +
+      scale_alpha_manual(values = c(`TRUE` = 1, `FALSE` = 0.6), guide = "none") +
+      scale_x_log10() +
+      coord_cartesian(clip = "off") +
+      labs(
+        x = "Odds Ratio vs Overall Average (log scale)",
+        y = "Incident Type",
+        color = "Personnel Type",
+        caption = "Reference group: overall average"
+      ) +
+      theme_minimal(base_size = 12) +
+      theme(
+        panel.background = element_rect(fill = "transparent", color = NA),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        panel.grid.major.y = element_blank(),
+        panel.grid.minor = element_blank(),
+        plot.margin = margin(10, 12, 28, 12),
+        text = element_text(color = "#f7f3ef"),
+        axis.text = element_text(color = "#c7c0b8"),
+        axis.title = element_text(color = "#f7f3ef"),
+        legend.background = element_rect(fill = "transparent", color = NA),
+        legend.key = element_rect(fill = "transparent", color = NA),
+        legend.text = element_text(color = "#c7c0b8"),
+        legend.title = element_text(color = "#f7f3ef"),
+        plot.caption = element_text(color = "#c7c0b8", hjust = 0)
+      )
+  })
+
   output$guidance <- renderText({
     llm_guidance <- llm_state()$guidance
     if (!is.null(llm_guidance)) return(llm_guidance)
     "Click \"Generate Prevention Guidance\" to create tailored guidance with the LLM."
   })
+
 
   output$guidance_status <- renderText({
     llm_state()$status
@@ -853,9 +964,15 @@ server <- function(input, output, session) {
     cause_text <- paste(paste0(cause_counts$cause, " (", cause_counts$n, ")"), collapse = ", ")
     incident_text <- paste(paste0(incident_counts$incident_category, " (", incident_counts$n, ")"), collapse = ", ")
 
+    dept_type_text <- if (!is.null(input$dept_type) && length(input$dept_type) > 0) {
+      paste(input$dept_type, collapse = ", ")
+    } else {
+      "Not provided"
+    }
+
     summary_text <- paste(
       "Region:", region_text,
-      "Department type:", input$dept_type,
+      "Department makeup:", dept_type_text,
       "Department size:", input$dept_size,
       "Top causes:", cause_text,
       "Top incident types:", incident_text,
