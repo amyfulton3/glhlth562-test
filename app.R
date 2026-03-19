@@ -969,7 +969,10 @@ server <- function(input, output, session) {
       return(tags$div("No personnel-level patterns available for the current filters."))
     }
 
-    tagList(lapply(summaries, tags$p))
+    tagList(
+      tags$p("Notes: Comparisons are against the overall average across all personnel types (including unselected types). If unselected types are above average, selected types can all appear below average."),
+      lapply(summaries, tags$p)
+    )
   })
 
 
