@@ -940,9 +940,28 @@ server <- function(input, output, session) {
       return(tags$div("Select one or more personnel types to see tailored context for your department."))
     }
 
+    single_incident <- length(unique(odds_df$incident_category)) == 1
+
     summaries <- lapply(selected_personnel, function(p) {
       subset <- odds_df %>% filter(department_type == p)
       if (nrow(subset) == 0) return(NULL)
+
+      if (single_incident) {
+        incident_label <- subset$incident_category[1]
+        totals <- df %>%
+          filter(!is.na(department_type)) %>%
+          mutate(department_type = str_trim(department_type)) %>%
+          filter(department_type != "Unknown") %>%
+          count(department_type, name = "n")
+        total_all <- sum(totals$n)
+        share <- totals %>% filter(department_type == p) %>% pull(n)
+        share <- ifelse(length(share) == 0 || total_all == 0, NA_real_, share / total_all)
+        pct <- ifelse(is.na(share), "0%", paste0(round(share * 100, 1), "%"))
+        return(paste0(
+          p, " firefighters account for ", pct,
+          " of fatalities for ", incident_label, " incidents in your region."
+        ))
+      }
 
       if (nrow(subset) == 1) {
         row <- subset[1, ]
@@ -969,10 +988,7 @@ server <- function(input, output, session) {
       return(tags$div("No personnel-level patterns available for the current filters."))
     }
 
-    tagList(
-      tags$p("Notes: Comparisons are against the overall average across all personnel types (including unselected types). If unselected types are above average, selected types can all appear below average."),
-      lapply(summaries, tags$p)
-    )
+    tagList(lapply(summaries, tags$p))
   })
 
 
