@@ -467,9 +467,11 @@ ui <- fluidPage(
       ),
       checkboxGroupInput(
         "incident_types",
-        "Incident Types (Structure Fire and Wildland are always included)",
-        choices = c("Hazmat", "EMS", "Vehicle Incident", "Rescue")
+        "Types of Incidents Responded To",
+        choices = c("Structure Fire", "Wildland", "Hazmat", "EMS", "Vehicle Incident", "Rescue"),
+        selected = c("Structure Fire")
       ),
+      tags$div(style = "color: #ffb347; margin-top: 6px;", textOutput("incident_error")),
       actionButton("run_llm", "Generate Prevention Guidance")
     ),
 
@@ -581,12 +583,19 @@ server <- function(input, output, session) {
       }
     }
 
-    if (!all(is.na(df$incident_category))) {
-      allowed <- unique(c("Structure Fire", "Wildland", input$incident_types))
-      df <- df %>% filter(incident_category %in% allowed)
+    if (!is.null(input$incident_types) && length(input$incident_types) > 0 && !all(is.na(df$incident_category))) {
+      df <- df %>% filter(incident_category %in% input$incident_types)
     }
 
     df
+  })
+
+  output$incident_error <- renderText({
+    if (is.null(input$incident_types) || length(input$incident_types) == 0) {
+      "Please select at least one incident type that your department responds to."
+    } else {
+      ""
+    }
   })
 
   observeEvent(refresh_timer(), {
@@ -620,6 +629,9 @@ server <- function(input, output, session) {
   })
 
   output$risk_summary <- renderText({
+    if (is.null(input$incident_types) || length(input$incident_types) == 0) {
+      return("Please select at least one incident type that your department responds to.")
+    }
     df <- filtered()
     if (nrow(df) == 0) return("No records match the current filters.")
 
@@ -639,6 +651,7 @@ server <- function(input, output, session) {
   })
 
   output$top_causes <- renderTable({
+    if (is.null(input$incident_types) || length(input$incident_types) == 0) return(NULL)
     df <- filtered()
     if (nrow(df) == 0) return(NULL)
 
@@ -649,6 +662,7 @@ server <- function(input, output, session) {
   })
 
   output$trend_plot <- renderPlot({
+    if (is.null(input$incident_types) || length(input$incident_types) == 0) return(NULL)
     df <- filtered()
     if (nrow(df) == 0 || all(is.na(df$year))) return(NULL)
 
@@ -670,6 +684,7 @@ server <- function(input, output, session) {
   })
 
   output$incident_mix_plot <- renderPlot({
+    if (is.null(input$incident_types) || length(input$incident_types) == 0) return(NULL)
     df <- filtered()
     if (nrow(df) == 0 || all(is.na(df$year)) || all(is.na(df$incident_category))) return(NULL)
 
@@ -705,6 +720,7 @@ server <- function(input, output, session) {
   })
 
   output$cause_plot <- renderPlot({
+    if (is.null(input$incident_types) || length(input$incident_types) == 0) return(NULL)
     df <- filtered()
     if (nrow(df) == 0 || all(is.na(df$cause))) return(NULL)
 
@@ -728,6 +744,7 @@ server <- function(input, output, session) {
   })
 
   output$odds_plot <- renderPlot({
+    if (is.null(input$incident_types) || length(input$incident_types) == 0) return(NULL)
     df <- filtered()
     odds_df <- compute_incident_odds(df, top_n = 6)
     if (is.null(odds_df) || nrow(odds_df) == 0) return(NULL)
@@ -807,6 +824,10 @@ server <- function(input, output, session) {
   })
 
   observeEvent(input$analyze_reports, {
+    if (is.null(input$incident_types) || length(input$incident_types) == 0) {
+      reports_state(list(status = "Please select at least one incident type that your department responds to.", analysis = NULL))
+      return()
+    }
     df <- filtered()
     if (nrow(df) == 0) {
       reports_state(list(status = "No records match the current filters.", analysis = NULL))
@@ -867,6 +888,10 @@ server <- function(input, output, session) {
   })
 
   observeEvent(input$generate_training, {
+    if (is.null(input$incident_types) || length(input$incident_types) == 0) {
+      training_state(list(status = "Please select at least one incident type that your department responds to.", plan = NULL))
+      return()
+    }
     df <- filtered()
     if (nrow(df) == 0) {
       training_state(list(status = "No records match the current filters.", plan = NULL))
@@ -934,6 +959,10 @@ server <- function(input, output, session) {
   })
 
   observeEvent(input$run_llm, {
+    if (is.null(input$incident_types) || length(input$incident_types) == 0) {
+      llm_state(list(status = "Please select at least one incident type that your department responds to.", guidance = NULL))
+      return()
+    }
     df <- filtered()
     if (nrow(df) == 0) {
       llm_state(list(status = "No records to analyze.", guidance = NULL))
