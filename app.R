@@ -289,6 +289,10 @@ format_incident_analysis <- function(text) {
 generate_training_plan <- function(region, trends_text, model = default_model) {
   instructions <- paste(
     "Create a 12-month firefighter training plan tailored to the region and trends provided.",
+    "Start with exactly two sentences:",
+    "Sentence 1 must start with 'Top concerns for your department are likely' and end with a period.",
+    "Sentence 2 must start with 'Top training priorities to combat these concerns are' and end with a period.",
+    "Then add a blank line, then the 12-month plan.",
     "Return exactly 12 items formatted exactly like:",
     "Month 1: Title",
     "Focus: ...",
@@ -393,6 +397,24 @@ parse_training_plan <- function(text) {
   if (nrow(df) == 0) return(NULL)
   if (all(is.na(df$Focus)) && all(is.na(df$Objective))) return(NULL)
   df
+}
+
+extract_training_intro <- function(text) {
+  if (is.null(text) || is.na(text) || str_trim(text) == "") return(NULL)
+  lines <- unlist(str_split(str_replace_all(text, "\\r", ""), "\\n"))
+  lines <- str_trim(lines)
+  lines <- lines[lines != ""]
+  if (length(lines) == 0) return(NULL)
+
+  concerns <- lines[str_detect(lines, "^Top concerns for your department are likely")]
+  priorities <- lines[str_detect(lines, "^Top training priorities to combat these concerns are")]
+
+  if (length(concerns) == 0 && length(priorities) == 0) return(NULL)
+
+  list(
+    concerns = if (length(concerns) > 0) concerns[1] else NULL,
+    priorities = if (length(priorities) > 0) priorities[1] else NULL
+  )
 }
 
 # ---- Odds ratios (within fatality records) ----
@@ -661,6 +683,7 @@ ui <- fluidPage(
             conditionalPanel("output.training_busy == true", tags$span(class = "inline-spinner"))
           ),
           textOutput("training_status"),
+          uiOutput("training_intro"),
           tableOutput("training_table"),
           textOutput("training_plan")
         )
@@ -1161,6 +1184,18 @@ server <- function(input, output, session) {
 
   output$training_status <- renderText({
     training_state()$status
+  })
+
+  output$training_intro <- renderUI({
+    plan <- training_state()$plan
+    intro <- extract_training_intro(plan)
+    if (is.null(intro)) return(NULL)
+
+    tags$div(
+      class = "card",
+      if (!is.null(intro$concerns)) tags$p(intro$concerns),
+      if (!is.null(intro$priorities)) tags$p(intro$priorities)
+    )
   })
 
   output$training_risks <- renderUI({
