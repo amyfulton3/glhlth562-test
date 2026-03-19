@@ -581,6 +581,10 @@ ui <- fluidPage(
             "Shows how incident types are over/under-represented in fatality records by personnel type in your selected region. Reference group: overall average. This is not a population risk estimate.",
             style = "color: var(--muted);"
           ),
+          tags$p(
+            "Gray points represent other personnel types not selected.",
+            style = "color: var(--muted); margin-top: -6px;"
+          ),
           plotOutput("odds_plot", height = "320px"),
           tags$div(style = "margin-top: 12px;", uiOutput("odds_summary"))
         ),
