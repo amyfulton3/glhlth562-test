@@ -248,6 +248,43 @@ generate_incident_analysis <- function(region, trends_text, reports_text, model 
   call_gemini(input_text, instructions, model = model)
 }
 
+# ---- Formatting: incident analysis ----
+format_incident_analysis <- function(text) {
+  if (is.null(text) || is.na(text) || str_trim(text) == "") return(NULL)
+  x <- str_replace_all(text, "\\r", "")
+  parts <- str_split(x, "(?i)Recommendations\\s*:", n = 2, simplify = TRUE)
+  hazards_raw <- str_trim(parts[1])
+  recs_raw <- if (ncol(parts) > 1) str_trim(parts[2]) else ""
+
+  extract_bullets <- function(block) {
+    lines <- unlist(str_split(block, "\\n"))
+    lines <- str_trim(lines)
+    lines <- lines[lines != ""]
+    lines <- str_replace(lines, "^[\\-*•]+\\s*", "")
+    lines <- str_replace(lines, "^\\d+\\.\\s*", "")
+    # Remove leading section header if present
+    lines <- lines[!str_detect(lines, regex("^hazards?\\s*&?\\s*risk", ignore_case = TRUE))]
+    lines
+  }
+
+  hazards <- extract_bullets(hazards_raw)
+  recs <- extract_bullets(recs_raw)
+
+  tags$div(
+    tags$div(
+      class = "card",
+      tags$div(class = "card-title", "Hazards & Risk Factors"),
+      tags$ul(lapply(hazards, tags$li))
+    ),
+    if (length(recs) > 0)
+      tags$div(
+        class = "card",
+        tags$div(class = "card-title", "Recommendations"),
+        tags$ul(lapply(recs, tags$li))
+      ) else NULL
+  )
+}
+
 # ---- LLM: training plan generation ----
 generate_training_plan <- function(region, trends_text, model = default_model) {
   instructions <- paste(
@@ -423,6 +460,9 @@ ui <- fluidPage(
       table { color: var(--text); }
       .shiny-output-error-validation { color: #ffb347; }
       .info-box { background: #101012; border: 1px dashed #333; padding: 10px; border-radius: 10px; margin-top: 10px; }
+      .card { background: #141417; border: 1px solid #2a2a2f; border-radius: 12px; padding: 12px 14px; margin: 10px 0; box-shadow: 0 6px 16px rgba(0,0,0,0.25); }
+      .card-title { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.5px; color: #ffb347; margin-bottom: 6px; }
+      .card ul { margin: 0 0 0 16px; }
       .nav-tabs { border-bottom: 1px solid #2a2a2f; }
       .nav-tabs > li > a { color: var(--muted); background: #111114; border: 1px solid #2a2a2f; margin-right: 6px; border-radius: 8px 8px 0 0; }
       .nav-tabs > li > a:hover { color: var(--text); background: #1a1a1d; }
@@ -431,6 +471,8 @@ ui <- fluidPage(
       .nav-tabs > li.active > a:focus { color: var(--text); background: #1c1c1f; border-bottom-color: transparent; }
       .global-spinner { display: none; position: fixed; top: 16px; right: 20px; width: 22px; height: 22px; border: 3px solid #2a2a2f; border-top-color: #ff6a00; border-radius: 50%; animation: spin 0.8s linear infinite; z-index: 9999; }
       .global-spinner.show { display: inline-block; }
+      .btn-inline { display: inline-flex; align-items: center; gap: 8px; }
+      .inline-spinner { width: 16px; height: 16px; border: 2px solid #2a2a2f; border-top-color: #ffb347; border-radius: 50%; animation: spin 0.8s linear infinite; }
       @keyframes spin { to { transform: rotate(360deg); } }
     "))
     ,
@@ -449,7 +491,7 @@ ui <- fluidPage(
     ),
     tags$div(
       tags$h1(class = "app-title", "Firefighter Fatality Risk Dashboard"),
-      tags$p(class = "app-subtitle", "Project proposal - Amy Fulton • Auto refreshes daily"),
+      tags$p(class = "app-subtitle", "Auto refreshes daily"),
       tags$p(class = "app-subtitle", textOutput("last_refreshed"))
     )
   ),
@@ -458,14 +500,7 @@ ui <- fluidPage(
     sidebarPanel(
       class = "sidebar",
       tags$div(textOutput("data_source")),
-      tags$div(
-        class = "info-box",
-        tags$strong("What you need to run LLM"),
-        tags$ol(
-          tags$li("A Gemini API key."),
-          tags$li("Set GEMINI_API_KEY in your environment.")
-        )
-      ),
+      
       actionButton("refresh_data", "Refresh Data Now"),
       radioButtons(
         "geo_mode",
@@ -518,7 +553,11 @@ ui <- fluidPage(
         selected = c("Structure Fire")
       ),
       tags$div(style = "color: #ffb347; margin-top: 6px;", textOutput("incident_error")),
-      actionButton("run_llm", "Generate Prevention Guidance")
+      tags$div(
+        class = "btn-inline",
+        actionButton("run_llm", "Generate Prevention Guidance"),
+        conditionalPanel("output.guidance_busy == true", tags$span(class = "inline-spinner"))
+      )
     ),
 
     mainPanel(
@@ -561,9 +600,13 @@ ui <- fluidPage(
             width = "100%",
             height = "180px"
           ),
-          actionButton("analyze_reports", "Analyze Incident Reports"),
+          tags$div(
+            class = "btn-inline",
+            actionButton("analyze_reports", "Analyze Incident Reports"),
+            conditionalPanel("output.reports_busy == true", tags$span(class = "inline-spinner"))
+          ),
           textOutput("reports_status"),
-          textOutput("reports_analysis")
+          uiOutput("reports_analysis")
         ),
         tabPanel(
           "Training Plan",
@@ -584,7 +627,11 @@ ui <- fluidPage(
               "Physical Conditioning Equipment"
             )
           ),
-          actionButton("generate_training", "Generate Training Plan"),
+          tags$div(
+            class = "btn-inline",
+            actionButton("generate_training", "Generate Training Plan"),
+            conditionalPanel("output.training_busy == true", tags$span(class = "inline-spinner"))
+          ),
           textOutput("training_status"),
           tableOutput("training_table"),
           textOutput("training_plan")
@@ -601,6 +648,9 @@ server <- function(input, output, session) {
   llm_state <- reactiveVal(list(status = "LLM guidance not generated yet.", guidance = NULL))
   reports_state <- reactiveVal(list(status = "No reports analyzed yet.", analysis = NULL))
   training_state <- reactiveVal(list(status = "No training plan generated yet.", plan = NULL))
+  guidance_busy <- reactiveVal(FALSE)
+  reports_busy <- reactiveVal(FALSE)
+  training_busy <- reactiveVal(FALSE)
 
   observeEvent(data_state(), {
     df <- data_state()
@@ -865,6 +915,8 @@ server <- function(input, output, session) {
   })
 
   observeEvent(input$analyze_reports, {
+    reports_busy(TRUE)
+    on.exit(reports_busy(FALSE), add = TRUE)
     if (is.null(input$incident_types) || length(input$incident_types) == 0) {
       reports_state(list(status = "Please select at least one incident type that your department responds to.", analysis = NULL))
       return()
@@ -924,11 +976,20 @@ server <- function(input, output, session) {
     reports_state()$status
   })
 
-  output$reports_analysis <- renderText({
-    reports_state()$analysis
+  output$reports_analysis <- renderUI({
+    format_incident_analysis(reports_state()$analysis)
   })
 
+  output$guidance_busy <- reactive({ guidance_busy() })
+  output$reports_busy <- reactive({ reports_busy() })
+  output$training_busy <- reactive({ training_busy() })
+  outputOptions(output, "guidance_busy", suspendWhenHidden = FALSE)
+  outputOptions(output, "reports_busy", suspendWhenHidden = FALSE)
+  outputOptions(output, "training_busy", suspendWhenHidden = FALSE)
+
   observeEvent(input$generate_training, {
+    training_busy(TRUE)
+    on.exit(training_busy(FALSE), add = TRUE)
     if (is.null(input$incident_types) || length(input$incident_types) == 0) {
       training_state(list(status = "Please select at least one incident type that your department responds to.", plan = NULL))
       return()
@@ -1017,6 +1078,8 @@ server <- function(input, output, session) {
   })
 
   observeEvent(input$run_llm, {
+    guidance_busy(TRUE)
+    on.exit(guidance_busy(FALSE), add = TRUE)
     if (is.null(input$incident_types) || length(input$incident_types) == 0) {
       llm_state(list(status = "Please select at least one incident type that your department responds to.", guidance = NULL))
       return()
