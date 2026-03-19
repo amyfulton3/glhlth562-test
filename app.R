@@ -579,7 +579,7 @@ ui <- fluidPage(
             style = "color: var(--muted);"
           ),
           plotOutput("odds_plot", height = "320px"),
-          tags$div(style = "margin-top: 12px;", textOutput("odds_summary"))
+          tags$div(style = "margin-top: 12px;", uiOutput("odds_summary"))
         ),
         tabPanel(
           "Prevention Guidance",
@@ -913,14 +913,14 @@ server <- function(input, output, session) {
       )
   })
 
-  output$odds_summary <- renderText({
+  output$odds_summary <- renderUI({
     if (is.null(input$incident_types) || length(input$incident_types) == 0) {
-      return("Select at least one incident type to see personnel insights.")
+      return(tags$div("Select at least one incident type to see personnel insights."))
     }
     df <- filtered()
     odds_df <- compute_incident_odds(df, top_n = 6)
     if (is.null(odds_df) || nrow(odds_df) == 0) {
-      return("No personnel-level patterns available for the current filters.")
+      return(tags$div("No personnel-level patterns available for the current filters."))
     }
 
     selected_personnel <- if (!is.null(input$dept_type) && length(input$dept_type) > 0) {
@@ -930,7 +930,7 @@ server <- function(input, output, session) {
     }
 
     if (length(selected_personnel) == 0) {
-      return("Select one or more personnel types to see tailored context for your department.")
+      return(tags$div("Select one or more personnel types to see tailored context for your department."))
     }
 
     summaries <- lapply(selected_personnel, function(p) {
@@ -959,10 +959,10 @@ server <- function(input, output, session) {
 
     summaries <- summaries[!vapply(summaries, is.null, logical(1))]
     if (length(summaries) == 0) {
-      return("No personnel-level patterns available for the current filters.")
+      return(tags$div("No personnel-level patterns available for the current filters."))
     }
 
-    paste(summaries, collapse = " ")
+    tagList(lapply(summaries, tags$p))
   })
 
 
