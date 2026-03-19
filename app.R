@@ -572,6 +572,15 @@ ui <- fluidPage(
           NULL
         ),
         tabPanel(
+          "Personnel",
+          h3("Incident Type Odds by Personnel Type (Your Region)"),
+          tags$p(
+            "Shows how incident types are over/under-represented in fatality records by personnel type in your selected region. Reference group: overall average. This is not a population risk estimate.",
+            style = "color: var(--muted);"
+          ),
+          plotOutput("odds_plot", height = "320px")
+        ),
+        tabPanel(
           "Prevention Guidance",
           h3("Prevention Guidance"),
           tags$p(
@@ -585,15 +594,6 @@ ui <- fluidPage(
           ),
           textOutput("guidance_status"),
           textOutput("guidance")
-        ),
-        tabPanel(
-          "Personnel",
-          h3("Incident Type Odds by Personnel Type (Your Region)"),
-          tags$p(
-            "Shows how incident types are over/under-represented in fatality records by personnel type in your selected region. Reference group: overall average. This is not a population risk estimate.",
-            style = "color: var(--muted);"
-          ),
-          plotOutput("odds_plot", height = "320px")
         ),
         tabPanel(
           "Incident Reports",
