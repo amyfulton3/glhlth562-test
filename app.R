@@ -8,6 +8,8 @@ library(lubridate)
 library(httr)
 library(jsonlite)
 library(xml2)
+library(plotly)
+library(maps)
 
 # ---- Configuration ----
 data_path <- "/Users/amyfulton/Downloads/ff_data.csv"
@@ -569,6 +571,12 @@ ui <- fluidPage(
           plotOutput("incident_mix_plot", height = "300px"),
           h3("Top Causes (Selected Filters)"),
           plotOutput("cause_plot", height = "260px"),
+          h3("Top Fatality Cause by State (Hover for Details)"),
+          tags$p(
+            "Interactive map showing the most common fatality cause in each state based on selected incident types.",
+            style = "color: var(--muted);"
+          ),
+          plotlyOutput("cause_map", height = "420px")
         ),
         tabPanel(
           "Prevention Guidance",
@@ -908,6 +916,60 @@ server <- function(input, output, session) {
         legend.text = element_text(color = "#c7c0b8"),
         legend.title = element_text(color = "#f7f3ef"),
         plot.caption = element_text(color = "#c7c0b8", hjust = 0)
+      )
+  })
+
+  output$cause_map <- renderPlotly({
+    if (is.null(input$incident_types) || length(input$incident_types) == 0) return(NULL)
+    df <- data_state()
+    if (nrow(df) == 0) return(NULL)
+
+    df <- df %>% filter(!is.na(state), !is.na(cause))
+    if (!all(is.na(df$incident_category))) {
+      df <- df %>% filter(incident_category %in% input$incident_types)
+    }
+
+    top_cause_by_state <- df %>%
+      count(state, cause, sort = TRUE) %>%
+      group_by(state) %>%
+      slice_head(n = 1) %>%
+      ungroup()
+
+    state_lookup <- data.frame(
+      state = state.abb,
+      region = tolower(state.name),
+      stringsAsFactors = FALSE
+    )
+
+    map_df <- maps::map_data("state") %>%
+      left_join(state_lookup, by = "region") %>%
+      left_join(top_cause_by_state, by = "state") %>%
+      mutate(
+        label = ifelse(is.na(cause), "No data", cause),
+        tooltip = paste0(
+          "State: ", toupper(region), "<br>",
+          "Top fatality cause: ", label
+        )
+      )
+
+    p <- ggplot(map_df, aes(long, lat, group = group, fill = label, text = tooltip)) +
+      geom_polygon(color = "#2a2a2f", linewidth = 0.2) +
+      coord_fixed(1.3) +
+      theme_void() +
+      theme(
+        legend.position = "right",
+        legend.text = element_text(color = "#c7c0b8"),
+        legend.title = element_text(color = "#f7f3ef"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        panel.background = element_rect(fill = "transparent", color = NA)
+      ) +
+      labs(fill = "Top Cause")
+
+    ggplotly(p, tooltip = "text") %>%
+      layout(
+        plot_bgcolor = "rgba(0,0,0,0)",
+        paper_bgcolor = "rgba(0,0,0,0)",
+        legend = list(font = list(color = "#c7c0b8"))
       )
   })
 
