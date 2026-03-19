@@ -539,11 +539,6 @@ ui <- fluidPage(
               "Fitness and Conditioning Equipment"
             )
           ),
-          checkboxGroupInput(
-            "training_incidents",
-            "Incident Types Responded To",
-            choices = c("Structure Fire", "Wildland", "Hazmat", "EMS", "Vehicle Incident", "Rescue")
-          ),
           actionButton("generate_training", "Generate Training Plan"),
           textOutput("training_status"),
           textOutput("training_plan")
@@ -926,16 +921,23 @@ server <- function(input, output, session) {
       "No specific training equipment listed."
     }
 
-    incident_response_text <- if (!is.null(input$training_incidents) && length(input$training_incidents) > 0) {
-      paste(input$training_incidents, collapse = ", ")
+    incident_response_text <- if (!is.null(input$incident_types) && length(input$incident_types) > 0) {
+      paste(input$incident_types, collapse = ", ")
     } else {
       "No incident response types listed."
     }
 
+    comment_text <- ifelse(
+      is.null(input$dept_comments) || str_trim(input$dept_comments) == "",
+      "No additional department comments provided.",
+      paste("Department comments:", input$dept_comments)
+    )
+
     trend_text <- paste0(
       trend_text,
       " Equipment available: ", equipment_text, ".",
-      " Incident response types: ", incident_response_text, "."
+      " Incident response types: ", incident_response_text, ".",
+      " ", comment_text
     )
 
     plan <- tryCatch(
