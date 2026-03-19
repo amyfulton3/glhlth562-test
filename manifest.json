@@ -1996,7 +1996,7 @@
       "checksum": "56b2c4489abd5842a5e12d481bed5778"
     },
     "app.R": {
-      "checksum": "3fc71e045dfadd0077e0c312e9fbe7ea"
+      "checksum": "a1b97d245316d88b8a9511dc6ae755b9"
     },
     "data/fatalities.csv": {
       "checksum": "9b43d140df8525f5fe7b7ab7b5866c37"
@@ -2008,7 +2008,7 @@
       "checksum": "0c7bf11e659399d198fe28971b7fee2b"
     },
     "README.md": {
-      "checksum": "cfd35f697c10054cd02c256b967d8321"
+      "checksum": "66ecb10776ff4255a41e384133fe6392"
     }
   },
   "users": null

@@ -8,7 +8,6 @@ library(lubridate)
 library(httr)
 library(jsonlite)
 library(xml2)
-library(shinycssloaders)
 
 # ---- Configuration ----
 data_path <- "/Users/amyfulton/Downloads/ff_data.csv"
@@ -430,8 +429,17 @@ ui <- fluidPage(
       .nav-tabs > li.active > a,
       .nav-tabs > li.active > a:hover,
       .nav-tabs > li.active > a:focus { color: var(--text); background: #1c1c1f; border-bottom-color: transparent; }
+      .global-spinner { display: none; position: fixed; top: 16px; right: 20px; width: 22px; height: 22px; border: 3px solid #2a2a2f; border-top-color: #ff6a00; border-radius: 50%; animation: spin 0.8s linear infinite; z-index: 9999; }
+      .global-spinner.show { display: inline-block; }
+      @keyframes spin { to { transform: rotate(360deg); } }
+    "))
+    ,
+    tags$script(HTML("
+      $(document).on('shiny:busy', function() { $('#global-spinner').addClass('show'); });
+      $(document).on('shiny:idle', function() { $('#global-spinner').removeClass('show'); });
     "))
   ),
+  tags$div(id = "global-spinner", class = "global-spinner"),
 
   tags$div(
     class = "app-header",
@@ -528,7 +536,7 @@ ui <- fluidPage(
           plotOutput("cause_plot", height = "260px"),
           h3("Prevention Guidance"),
           textOutput("guidance_status"),
-          withSpinner(textOutput("guidance"))
+          textOutput("guidance")
         ),
         tabPanel(
           "Personnel",
@@ -555,7 +563,7 @@ ui <- fluidPage(
           ),
           actionButton("analyze_reports", "Analyze Incident Reports"),
           textOutput("reports_status"),
-          withSpinner(textOutput("reports_analysis"))
+          textOutput("reports_analysis")
         ),
         tabPanel(
           "Training Plan",
@@ -578,7 +586,7 @@ ui <- fluidPage(
           ),
           actionButton("generate_training", "Generate Training Plan"),
           textOutput("training_status"),
-          withSpinner(tableOutput("training_table")),
+          tableOutput("training_table"),
           textOutput("training_plan")
         )
       )
