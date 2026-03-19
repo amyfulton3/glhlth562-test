@@ -74,7 +74,7 @@ The app checks the USFA RSS feed once every 24 hours. If a newer `pubDate` is fo
 
 - Never commit real API keys to GitHub.
 - `.Renviron` is ignored via `.gitignore`.
-- The interactive state map uses a lightweight hover tooltip built with `plotOutput()` and state center coordinates from base R.
+- The interactive state map uses a lightweight hover tooltip built with `plotOutput()` and state center coordinates from base R. If the optional `maps` package is installed, state outlines will be drawn behind the dots.
 
 ## Project Structure
 

@@ -954,8 +954,27 @@ server <- function(input, output, session) {
     df <- cause_map_data()
     if (nrow(df) == 0) return(NULL)
 
-    ggplot(df, aes(x = x, y = y)) +
-      geom_point(color = "#ff6a00", size = 3.4, alpha = 0.85) +
+    base_plot <- ggplot()
+    if (requireNamespace("maps", quietly = TRUE)) {
+      map_df <- maps::map_data("state")
+      base_plot <- base_plot +
+        geom_polygon(
+          data = map_df,
+          aes(x = long, y = lat, group = group),
+          fill = "transparent",
+          color = "#2a2a2f",
+          linewidth = 0.3
+        )
+    }
+
+    base_plot +
+      geom_point(
+        data = df,
+        aes(x = x, y = y),
+        color = "#ff6a00",
+        size = 3.4,
+        alpha = 0.85
+      ) +
       coord_quickmap() +
       theme_void() +
       theme(
