@@ -937,6 +937,16 @@ server <- function(input, output, session) {
       subset <- odds_df %>% filter(department_type == p)
       if (nrow(subset) == 0) return(NULL)
 
+      if (nrow(subset) == 1) {
+        row <- subset[1, ]
+        direction <- if (!is.na(row$or) && row$or >= 1) "more" else "fewer"
+        return(paste0(
+          p, " firefighters have historically experienced ", direction,
+          " fatalities in ", row$incident_category,
+          " incidents on average (relative to the overall average)."
+        ))
+      }
+
       higher <- subset %>% arrange(desc(or)) %>% slice(1)
       lower <- subset %>% arrange(or) %>% slice(1)
 
