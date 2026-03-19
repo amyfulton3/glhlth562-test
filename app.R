@@ -349,13 +349,6 @@ state_to_region <- function(state_abbr) {
   )
 }
 
-state_centers <- data.frame(
-  state = state.abb,
-  x = state.center$x,
-  y = state.center$y,
-  stringsAsFactors = FALSE
-)
-
 # ---- Training plan parsing ----
 parse_training_plan <- function(text) {
   if (is.null(text) || is.na(text) || str_trim(text) == "") return(NULL)
@@ -480,7 +473,6 @@ ui <- fluidPage(
       .global-spinner.show { display: inline-block; }
       .btn-inline { display: inline-flex; align-items: center; gap: 8px; }
       .inline-spinner { width: 16px; height: 16px; border: 2px solid #2a2a2f; border-top-color: #ffb347; border-radius: 50%; animation: spin 0.8s linear infinite; }
-      .map-tooltip { background: rgba(20, 20, 24, 0.92); color: #f7f3ef; padding: 8px 10px; border-radius: 8px; border: 1px solid #2a2a2f; font-size: 12px; box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35); pointer-events: none; }
       @keyframes spin { to { transform: rotate(360deg); } }
     "))
     ,
@@ -577,16 +569,7 @@ ui <- fluidPage(
           plotOutput("incident_mix_plot", height = "300px"),
           h3("Top Causes (Selected Filters)"),
           plotOutput("cause_plot", height = "260px"),
-          h3("Top Fatality Cause by State (Hover for Details)"),
-          tags$p(
-            "Interactive map showing the most common fatality cause in each state based on selected incident types.",
-            style = "color: var(--muted);"
-          ),
-          tags$div(
-            style = "position: relative;",
-            plotOutput("cause_map", height = "420px", hover = hoverOpts("cause_map_hover", delay = 60, delayType = "debounce")),
-            uiOutput("cause_map_hover_info")
-          )
+          NULL
         ),
         tabPanel(
           "Prevention Guidance",
@@ -929,76 +912,6 @@ server <- function(input, output, session) {
       )
   })
 
-  cause_map_data <- reactive({
-    if (is.null(input$incident_types) || length(input$incident_types) == 0) return(tibble())
-    df <- data_state()
-    if (nrow(df) == 0) return(tibble())
-
-    df <- df %>% filter(!is.na(state), !is.na(cause))
-    if (!all(is.na(df$incident_category))) {
-      df <- df %>% filter(incident_category %in% input$incident_types)
-    }
-
-    top_cause_by_state <- df %>%
-      count(state, cause, sort = TRUE) %>%
-      group_by(state) %>%
-      slice_head(n = 1) %>%
-      ungroup()
-
-    state_centers %>%
-      left_join(top_cause_by_state, by = "state") %>%
-      mutate(label = ifelse(is.na(cause), "No data", cause))
-  })
-
-  output$cause_map <- renderPlot({
-    df <- cause_map_data()
-    if (nrow(df) == 0) return(NULL)
-
-    base_plot <- ggplot()
-    if (requireNamespace("maps", quietly = TRUE)) {
-      map_df <- maps::map_data("state")
-      base_plot <- base_plot +
-        geom_polygon(
-          data = map_df,
-          aes(x = long, y = lat, group = group),
-          fill = "transparent",
-          color = "#2a2a2f",
-          linewidth = 0.3
-        )
-    }
-
-    base_plot +
-      geom_point(
-        data = df,
-        aes(x = x, y = y),
-        color = "#ff6a00",
-        size = 3.4,
-        alpha = 0.85
-      ) +
-      coord_quickmap() +
-      theme_void() +
-      theme(
-        plot.background = element_rect(fill = "transparent", color = NA),
-        panel.background = element_rect(fill = "transparent", color = NA)
-      )
-  })
-
-  output$cause_map_hover_info <- renderUI({
-    hover <- input$cause_map_hover
-    df <- cause_map_data()
-    if (is.null(hover) || nrow(df) == 0) return(NULL)
-
-    point <- nearPoints(df, hover, xvar = "x", yvar = "y", maxpoints = 1, threshold = 12)
-    if (nrow(point) == 0) return(NULL)
-
-    absolutePanel(
-      left = hover$coords_css$x + 12,
-      top = hover$coords_css$y + 12,
-      class = "map-tooltip",
-      tags$div(strong(point$state)),
-      tags$div(point$label)
-    )
-  })
 
   output$guidance <- renderText({
     llm_guidance <- llm_state()$guidance
