@@ -57,3 +57,14 @@ To keep the app reproducible without committing secrets:
 3. Use `.Renviron.example` as the template for local development.
 
 Note: The runtime environment (Posit Connect) must also have `GEMINI_API_KEY` set, since GitHub Actions secrets are only available during deployment, not at app runtime.
+
+## Posit Connect Cloud (Git-backed)
+
+If you are deploying via **connect.posit.cloud** with a Git repository:
+
+1. Repository: `amyfulton3/glhlth562-test`
+2. Branch: `main`
+3. Primary file: `app.R`
+4. Root directory: repository root
+
+Make sure `manifest.json` is present in the repo (it is committed).
