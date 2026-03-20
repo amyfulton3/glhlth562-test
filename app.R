@@ -272,6 +272,7 @@ generate_profile_summary <- function(profile_text, reports_text, model = default
     "You are summarizing the 10 most recent incident reports that match a firefighter profile.",
     "Identify key hazards, duties, and activities that appear across the reports.",
     "Provide 3-5 concise bullet points for risks and 3-5 bullet points for recommendations.",
+    "Recommendations must be individual-level actions a firefighter can take (not department-wide policies).",
     "Return output in this format:",
     "Risks:",
     "- ...",
