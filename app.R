@@ -44,6 +44,7 @@ normalize_data <- function(df) {
   col_dept_type <- pick_col(df, c("department_type", "dept_type", "dept_makeup", "classification"))
   col_age <- pick_col(df, c("age"))
   col_rank <- pick_col(df, c("rank", "position"))
+  col_incident_date <- pick_col(df, c("incident_date", "date_of_death"))
   col_dept_size <- pick_col(df, c("dept_size", "department_size", "staffing"))
   col_duty <- pick_col(df, c("duty"))
   col_emergency <- pick_col(df, c("emergency"))
@@ -57,6 +58,7 @@ normalize_data <- function(df) {
     department_type = if (!is.na(col_dept_type)) as.character(df[[col_dept_type]]) else "Unknown",
     age = if (!is.na(col_age)) suppressWarnings(as.integer(df[[col_age]])) else NA_integer_,
     rank = if (!is.na(col_rank)) as.character(df[[col_rank]]) else NA_character_,
+    incident_date = if (!is.na(col_incident_date)) parse_date(df[[col_incident_date]]) else as.Date(NA),
     dept_size = if (!is.na(col_dept_size)) suppressWarnings(as.integer(df[[col_dept_size]])) else NA_integer_,
     narrative = if (!is.na(col_narrative)) as.character(df[[col_narrative]]) else NA_character_,
     duty = if (!is.na(col_duty)) as.character(df[[col_duty]]) else NA_character_,
@@ -97,6 +99,17 @@ parse_year <- function(x) {
     y <- suppressWarnings(as.integer(str_extract(x, "[0-9]{4}")))
   }
   y
+}
+
+parse_date <- function(x) {
+  x <- as.character(x)
+  suppressWarnings(
+    coalesce(
+      lubridate::mdy(x),
+      lubridate::ymd(x),
+      lubridate::dmy(x)
+    )
+  )
 }
 
 # ---- Helpers: refresh bookkeeping ----
@@ -248,6 +261,30 @@ generate_incident_analysis <- function(region, trends_text, reports_text, model 
     "Region:", region,
     "\nHistorical trends:", trends_text,
     "\nIncident reports:", reports_text
+  )
+
+  call_gemini(input_text, instructions, model = model)
+}
+
+# ---- LLM: profile recent report summary ----
+generate_profile_summary <- function(profile_text, reports_text, model = default_model) {
+  instructions <- paste(
+    "You are summarizing the 10 most recent incident reports that match a firefighter profile.",
+    "Identify key hazards, duties, and activities that appear across the reports.",
+    "Provide 3-5 concise bullet points for risks and 3-5 bullet points for recommendations.",
+    "Return output in this format:",
+    "Risks:",
+    "- ...",
+    "- ...",
+    "Recommendations:",
+    "- ...",
+    "- ...",
+    "Keep the tone clear and practical."
+  )
+
+  input_text <- paste(
+    "Profile:", profile_text,
+    "\nRecent incident reports:", reports_text
   )
 
   call_gemini(input_text, instructions, model = model)
@@ -779,7 +816,19 @@ ui <- fluidPage(
           h3("Top Causes"),
           plotOutput("profile_cause_plot", height = "260px"),
           h3("Top Incident Types"),
-          plotOutput("profile_incident_plot", height = "260px")
+          plotOutput("profile_incident_plot", height = "260px"),
+          h3("Recent Incident Summary"),
+          tags$p(
+            "Summarize the 10 most recent incident reports that match your profile.",
+            style = "color: var(--muted);"
+          ),
+          tags$div(
+            class = "btn-inline",
+            actionButton("profile_analyze", "Analyze Recent Reports"),
+            conditionalPanel("output.profile_busy == true", tags$span(class = "inline-spinner"))
+          ),
+          textOutput("profile_status"),
+          uiOutput("profile_analysis")
         )
       )
     )
@@ -794,9 +843,11 @@ server <- function(input, output, session) {
   llm_state <- reactiveVal(list(status = "LLM guidance not generated yet.", guidance = NULL))
   reports_state <- reactiveVal(list(status = "No reports analyzed yet.", analysis = NULL))
   training_state <- reactiveVal(list(status = "No training plan generated yet.", plan = NULL))
+  profile_state <- reactiveVal(list(status = "No profile summary generated yet.", analysis = NULL))
   guidance_busy <- reactiveVal(FALSE)
   reports_busy <- reactiveVal(FALSE)
   training_busy <- reactiveVal(FALSE)
+  profile_busy <- reactiveVal(FALSE)
 
   observeEvent(data_state(), {
     df <- data_state()
@@ -1390,12 +1441,73 @@ server <- function(input, output, session) {
     format_incident_analysis(reports_state()$analysis)
   })
 
+  observeEvent(input$profile_analyze, {
+    profile_busy(TRUE)
+    on.exit(profile_busy(FALSE), add = TRUE)
+
+    df <- profile_filtered()
+    if (nrow(df) == 0) {
+      profile_state(list(status = "No records match the current profile filters.", analysis = NULL))
+      return()
+    }
+
+    key <- Sys.getenv("GEMINI_API_KEY")
+    if (key == "") {
+      profile_state(list(status = "Missing GEMINI_API_KEY. Set it in .Renviron or your session.", analysis = NULL))
+      return()
+    }
+
+    reports <- df %>%
+      mutate(order_date = ifelse(is.na(incident_date), as.Date(paste0(year, "-12-31")), incident_date)) %>%
+      arrange(desc(order_date)) %>%
+      filter(!is.na(narrative), narrative != "") %>%
+      slice_head(n = 10) %>%
+      pull(narrative)
+
+    if (length(reports) == 0) {
+      profile_state(list(status = "No incident narratives available for this profile.", analysis = NULL))
+      return()
+    }
+
+    profile_text <- paste(
+      "Age range:", input$profile_age_range,
+      "| Role:", ifelse(is.null(input$profile_role), "All", input$profile_role),
+      "| Rank:", ifelse(is.null(input$profile_rank), "All", input$profile_rank)
+    )
+
+    reports_text <- paste(reports, collapse = "\n---\n")
+    if (nchar(reports_text) > 6000) {
+      reports_text <- substr(reports_text, 1, 6000)
+    }
+
+    analysis <- tryCatch(
+      generate_profile_summary(profile_text, reports_text),
+      error = function(e) NULL
+    )
+
+    if (is.null(analysis)) {
+      profile_state(list(status = "LLM analysis failed. Try again.", analysis = NULL))
+    } else {
+      profile_state(list(status = "Profile summary complete.", analysis = analysis))
+    }
+  })
+
+  output$profile_status <- renderText({
+    profile_state()$status
+  })
+
+  output$profile_analysis <- renderUI({
+    format_incident_analysis(profile_state()$analysis)
+  })
+
   output$guidance_busy <- reactive({ guidance_busy() })
   output$reports_busy <- reactive({ reports_busy() })
   output$training_busy <- reactive({ training_busy() })
+  output$profile_busy <- reactive({ profile_busy() })
   outputOptions(output, "guidance_busy", suspendWhenHidden = FALSE)
   outputOptions(output, "reports_busy", suspendWhenHidden = FALSE)
   outputOptions(output, "training_busy", suspendWhenHidden = FALSE)
+  outputOptions(output, "profile_busy", suspendWhenHidden = FALSE)
 
   observeEvent(input$generate_training, {
     training_busy(TRUE)
