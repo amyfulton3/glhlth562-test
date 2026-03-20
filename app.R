@@ -42,6 +42,9 @@ normalize_data <- function(df) {
   col_cause <- pick_col(df, c("cause", "cause_of_death", "manner_of_death", "fatality_cause", "cause_of_fatal_injury"))
   col_narrative <- pick_col(df, c("narrative", "incident_narrative", "summary", "initial_summary"))
   col_dept_type <- pick_col(df, c("department_type", "dept_type", "dept_makeup", "classification"))
+  col_age <- pick_col(df, c("age"))
+  col_rank <- pick_col(df, c("rank", "position"))
+  col_gender <- pick_col(df, c("gender", "sex"))
   col_dept_size <- pick_col(df, c("dept_size", "department_size", "staffing"))
   col_duty <- pick_col(df, c("duty"))
   col_emergency <- pick_col(df, c("emergency"))
@@ -53,6 +56,9 @@ normalize_data <- function(df) {
     incident_type = if (!is.na(col_incident)) as.character(df[[col_incident]]) else NA_character_,
     cause = if (!is.na(col_cause)) as.character(df[[col_cause]]) else NA_character_,
     department_type = if (!is.na(col_dept_type)) as.character(df[[col_dept_type]]) else "Unknown",
+    age = if (!is.na(col_age)) suppressWarnings(as.integer(df[[col_age]])) else NA_integer_,
+    rank = if (!is.na(col_rank)) as.character(df[[col_rank]]) else NA_character_,
+    gender = if (!is.na(col_gender)) as.character(df[[col_gender]]) else NA_character_,
     dept_size = if (!is.na(col_dept_size)) suppressWarnings(as.integer(df[[col_dept_size]])) else NA_integer_,
     narrative = if (!is.na(col_narrative)) as.character(df[[col_narrative]]) else NA_character_,
     duty = if (!is.na(col_duty)) as.character(df[[col_duty]]) else NA_character_,
@@ -735,6 +741,24 @@ ui <- fluidPage(
           tableOutput("training_table"),
           textOutput("training_plan")
         )
+        ,
+        tabPanel(
+          "Individual Guidance",
+          h3("Individualized Risk Profile"),
+          tags$p(
+            "Explore historical fatality patterns for firefighters who match your profile.",
+            style = "color: var(--muted);"
+          ),
+          sliderInput("profile_age", "Age Range", min = 20, max = 70, value = c(25, 55)),
+          selectInput("profile_gender", "Gender (if available)", choices = c("All")),
+          selectInput("profile_role", "Role / Classification", choices = c("All")),
+          tags$p(class = "app-subtitle", textOutput("gender_note")),
+          plotOutput("profile_trend_plot", height = "260px"),
+          h3("Top Causes"),
+          plotOutput("profile_cause_plot", height = "260px"),
+          h3("Top Incident Types"),
+          plotOutput("profile_incident_plot", height = "260px")
+        )
       )
     )
   )
@@ -760,6 +784,26 @@ server <- function(input, output, session) {
       updateSelectInput(session, "state", choices = c("All", states))
       updateSelectInput(session, "state", selected = "All")
     }
+
+    if (!all(is.na(df$department_type))) {
+      roles <- sort(unique(na.omit(df$department_type)))
+      updateSelectInput(session, "profile_role", choices = c("All", roles), selected = "All")
+    }
+
+    if (!all(is.na(df$gender))) {
+      genders <- sort(unique(na.omit(df$gender)))
+      updateSelectInput(session, "profile_gender", choices = c("All", genders), selected = "All")
+    } else {
+      updateSelectInput(session, "profile_gender", choices = c("All"), selected = "All")
+    }
+
+    if (!all(is.na(df$age))) {
+      age_min <- min(df$age, na.rm = TRUE)
+      age_max <- max(df$age, na.rm = TRUE)
+      if (is.finite(age_min) && is.finite(age_max)) {
+        updateSliderInput(session, "profile_age", min = age_min, max = age_max, value = c(age_min, age_max))
+      }
+    }
   })
 
   filtered <- reactive({
@@ -777,6 +821,27 @@ server <- function(input, output, session) {
 
     if (!is.null(input$incident_types) && length(input$incident_types) > 0 && !all(is.na(df$incident_category))) {
       df <- df %>% filter(incident_category %in% input$incident_types)
+    }
+
+    df
+  })
+
+  profile_filtered <- reactive({
+    df <- data_state()
+    if (nrow(df) == 0) return(df)
+
+    if (!all(is.na(df$age)) && !is.null(input$profile_age)) {
+      df <- df %>% filter(!is.na(age), age >= input$profile_age[1], age <= input$profile_age[2])
+    }
+
+    if (!is.null(input$profile_role) && input$profile_role != "All") {
+      df <- df %>% filter(department_type == input$profile_role)
+    }
+
+    if (!is.null(input$profile_gender) && input$profile_gender != "All") {
+      if (!all(is.na(df$gender))) {
+        df <- df %>% filter(gender == input$profile_gender)
+      }
     }
 
     df
@@ -806,6 +871,15 @@ server <- function(input, output, session) {
     else if (src == "cache") "Data source: cached USFA API download"
     else if (src == "local") "Data source: local file (ff_data.csv)"
     else "Data source: bundled sample data"
+  })
+
+  output$gender_note <- renderText({
+    df <- data_state()
+    if (all(is.na(df$gender))) {
+      "Gender is not available in this dataset. The filter is optional."
+    } else {
+      ""
+    }
   })
 
   output$last_refreshed <- renderText({
@@ -910,6 +984,74 @@ server <- function(input, output, session) {
         legend.key = element_rect(fill = "transparent", color = NA),
         legend.text = element_text(color = "#c7c0b8"),
         legend.title = element_text(color = "#f7f3ef")
+      )
+  })
+
+  output$profile_trend_plot <- renderPlot({
+    df <- profile_filtered()
+    if (nrow(df) == 0 || all(is.na(df$year))) return(NULL)
+
+    df %>%
+      filter(!is.na(year)) %>%
+      count(year) %>%
+      ggplot(aes(x = year, y = n)) +
+      geom_area(fill = "#d63230", alpha = 0.4) +
+      geom_line(linewidth = 1.1, color = "#ffb347") +
+      geom_point(size = 2, color = "#ffb347") +
+      labs(x = "Year", y = "Fatalities") +
+      theme_minimal(base_size = 12) +
+      theme(
+        panel.background = element_rect(fill = "transparent", color = NA),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        text = element_text(color = "#f7f3ef"),
+        axis.text = element_text(color = "#c7c0b8"),
+        axis.title = element_text(color = "#f7f3ef")
+      )
+  })
+
+  output$profile_cause_plot <- renderPlot({
+    df <- profile_filtered()
+    if (nrow(df) == 0 || all(is.na(df$cause))) return(NULL)
+
+    top <- df %>%
+      filter(!is.na(cause)) %>%
+      count(cause, sort = TRUE) %>%
+      slice_head(n = 6)
+
+    ggplot(top, aes(x = reorder(cause, n), y = n)) +
+      geom_col(fill = "#ff6a00") +
+      coord_flip() +
+      labs(x = NULL, y = "Fatalities") +
+      theme_minimal(base_size = 12) +
+      theme(
+        panel.background = element_rect(fill = "transparent", color = NA),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        text = element_text(color = "#f7f3ef"),
+        axis.text = element_text(color = "#c7c0b8"),
+        axis.title = element_text(color = "#f7f3ef")
+      )
+  })
+
+  output$profile_incident_plot <- renderPlot({
+    df <- profile_filtered()
+    if (nrow(df) == 0 || all(is.na(df$incident_category))) return(NULL)
+
+    top <- df %>%
+      filter(!is.na(incident_category)) %>%
+      count(incident_category, sort = TRUE) %>%
+      slice_head(n = 6)
+
+    ggplot(top, aes(x = reorder(incident_category, n), y = n)) +
+      geom_col(fill = "#ffb347") +
+      coord_flip() +
+      labs(x = NULL, y = "Fatalities") +
+      theme_minimal(base_size = 12) +
+      theme(
+        panel.background = element_rect(fill = "transparent", color = NA),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        text = element_text(color = "#f7f3ef"),
+        axis.text = element_text(color = "#c7c0b8"),
+        axis.title = element_text(color = "#f7f3ef")
       )
   })
 
