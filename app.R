@@ -819,7 +819,7 @@ ui <- fluidPage(
           plotOutput("profile_incident_plot", height = "260px"),
           h3("Recent Incident Summary"),
           tags$p(
-            "Summarize the 10 most recent incident reports that match your profile.",
+            "Summarize up to 10 of the most recent incident reports that match your profile (fewer if fewer are available).",
             style = "color: var(--muted);"
           ),
           tags$div(
