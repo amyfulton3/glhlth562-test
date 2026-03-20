@@ -228,7 +228,7 @@ generate_incident_analysis <- function(region, trends_text, reports_text, model 
   instructions <- paste(
     "You are analyzing firefighter incident reports.",
     "Extract and list specific hazards and risk factors mentioned or implied in the reports.",
-    "Use the region context and historical trends provided to prioritize the risks.",
+    "Use the historical fatality trends (including common duties and activities) as explicit risk factors when interpreting the reports.",
     "Return output in this format:",
     "Hazards & Risk Factors:",
     "- ...",
