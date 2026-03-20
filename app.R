@@ -68,6 +68,7 @@ normalize_data <- function(df) {
   out$department_type <- normalize_dept_type(out$department_type)
   out$incident_category <- classify_incident(out)
   out$region <- state_to_region(out$state)
+  out$rank_group <- rank_group(out$rank)
   out
 }
 
@@ -362,6 +363,19 @@ state_to_region <- function(state_abbr) {
     state_abbr %in% south ~ "South",
     state_abbr %in% west ~ "West",
     TRUE ~ NA_character_
+  )
+}
+
+# ---- Rank grouping ----
+rank_group <- function(rank) {
+  rank <- tolower(str_trim(rank))
+  case_when(
+    is.na(rank) | rank == "" ~ NA_character_,
+    str_detect(rank, "chief|deputy|assistant|commissioner|marshal") ~ "Chief/Command",
+    str_detect(rank, "captain|lieutenant|officer|supervisor|battalion") ~ "Officer",
+    str_detect(rank, "engineer|driver|apparatus|operator") ~ "Driver/Engineer",
+    str_detect(rank, "firefighter|ff|emt|paramedic|responder") ~ "Firefighter/EMT",
+    TRUE ~ "Specialist/Other"
   )
 }
 
@@ -747,9 +761,18 @@ ui <- fluidPage(
             "Explore historical fatality patterns for firefighters who match your profile.",
             style = "color: var(--muted);"
           ),
-          sliderInput("profile_age", "Age Range", min = 20, max = 70, value = c(25, 55)),
+          selectInput(
+            "profile_age_range",
+            "Age Range",
+            choices = c("All", "20-29", "30-39", "40-49", "50-59", "60-69", "70+"),
+            selected = "All"
+          ),
           selectInput("profile_role", "Role / Classification", choices = c("All")),
-          selectInput("profile_rank", "Rank", choices = c("All")),
+          selectInput(
+            "profile_rank",
+            "Rank Category",
+            choices = c("All", "Firefighter/EMT", "Driver/Engineer", "Officer", "Chief/Command", "Specialist/Other")
+          ),
           plotOutput("profile_trend_plot", height = "260px"),
           h3("Top Causes"),
           plotOutput("profile_cause_plot", height = "260px"),
@@ -787,19 +810,9 @@ server <- function(input, output, session) {
       updateSelectInput(session, "profile_role", choices = c("All", roles), selected = "All")
     }
 
-    if (!all(is.na(df$rank))) {
-      ranks <- sort(unique(na.omit(df$rank)))
-      updateSelectInput(session, "profile_rank", choices = c("All", ranks), selected = "All")
-    } else {
-      updateSelectInput(session, "profile_rank", choices = c("All"), selected = "All")
-    }
-
-    if (!all(is.na(df$age))) {
-      age_min <- min(df$age, na.rm = TRUE)
-      age_max <- max(df$age, na.rm = TRUE)
-      if (is.finite(age_min) && is.finite(age_max)) {
-        updateSliderInput(session, "profile_age", min = age_min, max = age_max, value = c(age_min, age_max))
-      }
+    if (!all(is.na(df$rank_group))) {
+      groups <- sort(unique(na.omit(df$rank_group)))
+      updateSelectInput(session, "profile_rank", choices = c("All", groups), selected = "All")
     }
   })
 
@@ -827,8 +840,15 @@ server <- function(input, output, session) {
     df <- data_state()
     if (nrow(df) == 0) return(df)
 
-    if (!all(is.na(df$age)) && !is.null(input$profile_age)) {
-      df <- df %>% filter(!is.na(age), age >= input$profile_age[1], age <= input$profile_age[2])
+    if (!all(is.na(df$age)) && !is.null(input$profile_age_range) && input$profile_age_range != "All") {
+      bounds <- str_split(input$profile_age_range, "-", simplify = TRUE)
+      if (length(bounds) == 2) {
+        low <- suppressWarnings(as.integer(bounds[1]))
+        high <- suppressWarnings(as.integer(bounds[2]))
+        df <- df %>% filter(!is.na(age), age >= low, age <= high)
+      } else if (input$profile_age_range == "70+") {
+        df <- df %>% filter(!is.na(age), age >= 70)
+      }
     }
 
     if (!is.null(input$profile_role) && input$profile_role != "All") {
@@ -836,8 +856,8 @@ server <- function(input, output, session) {
     }
 
     if (!is.null(input$profile_rank) && input$profile_rank != "All") {
-      if (!all(is.na(df$rank))) {
-        df <- df %>% filter(rank == input$profile_rank)
+      if (!all(is.na(df$rank_group))) {
+        df <- df %>% filter(rank_group == input$profile_rank)
       }
     }
 
