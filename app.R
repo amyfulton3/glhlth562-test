@@ -44,7 +44,6 @@ normalize_data <- function(df) {
   col_dept_type <- pick_col(df, c("department_type", "dept_type", "dept_makeup", "classification"))
   col_age <- pick_col(df, c("age"))
   col_rank <- pick_col(df, c("rank", "position"))
-  col_gender <- pick_col(df, c("gender", "sex"))
   col_dept_size <- pick_col(df, c("dept_size", "department_size", "staffing"))
   col_duty <- pick_col(df, c("duty"))
   col_emergency <- pick_col(df, c("emergency"))
@@ -58,7 +57,6 @@ normalize_data <- function(df) {
     department_type = if (!is.na(col_dept_type)) as.character(df[[col_dept_type]]) else "Unknown",
     age = if (!is.na(col_age)) suppressWarnings(as.integer(df[[col_age]])) else NA_integer_,
     rank = if (!is.na(col_rank)) as.character(df[[col_rank]]) else NA_character_,
-    gender = if (!is.na(col_gender)) as.character(df[[col_gender]]) else NA_character_,
     dept_size = if (!is.na(col_dept_size)) suppressWarnings(as.integer(df[[col_dept_size]])) else NA_integer_,
     narrative = if (!is.na(col_narrative)) as.character(df[[col_narrative]]) else NA_character_,
     duty = if (!is.na(col_duty)) as.character(df[[col_duty]]) else NA_character_,
@@ -750,10 +748,8 @@ ui <- fluidPage(
             style = "color: var(--muted);"
           ),
           sliderInput("profile_age", "Age Range", min = 20, max = 70, value = c(25, 55)),
-          selectInput("profile_gender", "Gender (if available)", choices = c("All")),
           selectInput("profile_role", "Role / Classification", choices = c("All")),
           selectInput("profile_rank", "Rank", choices = c("All")),
-          tags$p(class = "app-subtitle", textOutput("gender_note")),
           plotOutput("profile_trend_plot", height = "260px"),
           h3("Top Causes"),
           plotOutput("profile_cause_plot", height = "260px"),
@@ -789,13 +785,6 @@ server <- function(input, output, session) {
     if (!all(is.na(df$department_type))) {
       roles <- sort(unique(na.omit(df$department_type)))
       updateSelectInput(session, "profile_role", choices = c("All", roles), selected = "All")
-    }
-
-    if (!all(is.na(df$gender))) {
-      genders <- sort(unique(na.omit(df$gender)))
-      updateSelectInput(session, "profile_gender", choices = c("All", genders), selected = "All")
-    } else {
-      updateSelectInput(session, "profile_gender", choices = c("All"), selected = "All")
     }
 
     if (!all(is.na(df$rank))) {
@@ -846,12 +835,6 @@ server <- function(input, output, session) {
       df <- df %>% filter(department_type == input$profile_role)
     }
 
-    if (!is.null(input$profile_gender) && input$profile_gender != "All") {
-      if (!all(is.na(df$gender))) {
-        df <- df %>% filter(gender == input$profile_gender)
-      }
-    }
-
     if (!is.null(input$profile_rank) && input$profile_rank != "All") {
       if (!all(is.na(df$rank))) {
         df <- df %>% filter(rank == input$profile_rank)
@@ -885,15 +868,6 @@ server <- function(input, output, session) {
     else if (src == "cache") "Data source: cached USFA API download"
     else if (src == "local") "Data source: local file (ff_data.csv)"
     else "Data source: bundled sample data"
-  })
-
-  output$gender_note <- renderText({
-    df <- data_state()
-    if (all(is.na(df$gender))) {
-      "Gender is not available in this dataset. The filter is optional."
-    } else {
-      ""
-    }
   })
 
   output$last_refreshed <- renderText({
