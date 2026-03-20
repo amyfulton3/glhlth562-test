@@ -759,6 +759,7 @@ server <- function(input, output, session) {
 
   observeEvent(data_state(), {
     df <- data_state()
+    last_refresh_state(read_last_refresh())
     if (!all(is.na(df$state))) {
       states <- sort(unique(na.omit(df$state)))
       updateSelectInput(session, "state", choices = c("All", states))
