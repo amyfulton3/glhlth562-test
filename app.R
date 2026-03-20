@@ -742,6 +742,7 @@ ui <- fluidPage(
 server <- function(input, output, session) {
   data_state <- reactiveVal(get_data())
   refresh_timer <- reactiveTimer(24 * 60 * 60 * 1000)
+  last_refresh_state <- reactiveVal(read_last_refresh())
   llm_state <- reactiveVal(list(status = "LLM guidance not generated yet.", guidance = NULL))
   reports_state <- reactiveVal(list(status = "No reports analyzed yet.", analysis = NULL))
   training_state <- reactiveVal(list(status = "No training plan generated yet.", plan = NULL))
@@ -788,10 +789,12 @@ server <- function(input, output, session) {
 
   observeEvent(refresh_timer(), {
     data_state(get_data(FALSE))
+    last_refresh_state(read_last_refresh())
   })
 
   observeEvent(input$refresh_data, {
     data_state(get_data(TRUE))
+    last_refresh_state(read_last_refresh())
   })
 
   output$data_source <- renderText({
@@ -803,7 +806,7 @@ server <- function(input, output, session) {
   })
 
   output$last_refreshed <- renderText({
-    last <- read_last_refresh()
+    last <- last_refresh_state()
     if (is.na(last)) return("Last refreshed: not yet")
     paste("Last refreshed:", format(last, "%Y-%m-%d %H:%M %Z"))
   })
