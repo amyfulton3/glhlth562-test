@@ -664,8 +664,8 @@ ui <- fluidPage(
             "Shows all duties and activities associated with fatalities for the selected personnel types in your region.",
             style = "color: var(--muted);"
           ),
-          plotOutput("duty_plot", height = "420px"),
-          plotOutput("activity_plot", height = "620px")
+          plotOutput("duty_plot", height = "320px"),
+          plotOutput("activity_plot", height = "520px")
         ),
         tabPanel(
           "Prevention Guidance",
@@ -1009,21 +1009,17 @@ server <- function(input, output, session) {
         category = str_trunc(category, 22)
       )
 
-    ggplot(summary_df, aes(x = "", y = n, fill = category)) +
-      geom_col(width = 1, color = "#2a2a2f", linewidth = 0.3) +
-      coord_polar(theta = "y") +
-      facet_wrap(~ department_type, ncol = 2) +
-      labs(x = NULL, y = NULL, fill = "Duty") +
+    ggplot(summary_df, aes(x = n, y = reorder(category, n), fill = department_type)) +
+      geom_col(alpha = 0.9, position = "dodge") +
+      scale_fill_manual(values = personnel_palette[selected_personnel]) +
+      labs(x = "Fatality Count", y = "Duty", fill = "Personnel Type") +
       theme_minimal(base_size = 12) +
       theme(
         panel.background = element_rect(fill = "transparent", color = NA),
         plot.background = element_rect(fill = "transparent", color = NA),
-        panel.grid = element_blank(),
-        axis.text = element_blank(),
-        axis.title = element_blank(),
-        axis.ticks = element_blank(),
-        strip.background = element_rect(fill = "#1c1c1f", color = "#2a2a2f"),
-        strip.text = element_text(color = "#f7f3ef", face = "bold"),
+        panel.grid.major.y = element_blank(),
+        axis.text.x = element_text(color = "#c7c0b8"),
+        axis.text.y = element_text(color = "#c7c0b8"),
         legend.background = element_rect(fill = "transparent", color = NA),
         legend.key = element_rect(fill = "transparent", color = NA),
         legend.text = element_text(color = "#c7c0b8"),
@@ -1050,21 +1046,17 @@ server <- function(input, output, session) {
         category = str_trunc(category, 22)
       )
 
-    ggplot(summary_df, aes(x = "", y = n, fill = category)) +
-      geom_col(width = 1, color = "#2a2a2f", linewidth = 0.3) +
-      coord_polar(theta = "y") +
-      facet_wrap(~ department_type, ncol = 2) +
-      labs(x = NULL, y = NULL, fill = "Activity") +
+    ggplot(summary_df, aes(x = n, y = reorder(category, n), fill = department_type)) +
+      geom_col(alpha = 0.9, position = "dodge") +
+      scale_fill_manual(values = personnel_palette[selected_personnel]) +
+      labs(x = "Fatality Count", y = "Activity", fill = "Personnel Type") +
       theme_minimal(base_size = 12) +
       theme(
         panel.background = element_rect(fill = "transparent", color = NA),
         plot.background = element_rect(fill = "transparent", color = NA),
-        panel.grid = element_blank(),
-        axis.text = element_blank(),
-        axis.title = element_blank(),
-        axis.ticks = element_blank(),
-        strip.background = element_rect(fill = "#1c1c1f", color = "#2a2a2f"),
-        strip.text = element_text(color = "#f7f3ef", face = "bold"),
+        panel.grid.major.y = element_blank(),
+        axis.text.x = element_text(color = "#c7c0b8"),
+        axis.text.y = element_text(color = "#c7c0b8"),
         legend.background = element_rect(fill = "transparent", color = NA),
         legend.key = element_rect(fill = "transparent", color = NA),
         legend.text = element_text(color = "#c7c0b8"),
