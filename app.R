@@ -462,7 +462,7 @@ compute_incident_odds <- function(df, top_n = 6) {
   out
 }
 
-summarize_duty_activity <- function(df) {
+summarize_duty_activity <- function(df, selected_personnel) {
   if (nrow(df) == 0) return(NULL)
 
   df <- df %>%
@@ -473,31 +473,21 @@ summarize_duty_activity <- function(df) {
     ) %>%
     filter(!is.na(department_type), department_type != "Unknown")
 
-  top_duty <- df %>%
+  if (!is.null(selected_personnel) && length(selected_personnel) > 0) {
+    df <- df %>% filter(department_type %in% selected_personnel)
+  }
+
+  duty_counts <- df %>%
     filter(!is.na(duty), duty != "") %>%
-    count(department_type, duty, sort = TRUE) %>%
-    group_by(department_type) %>%
-    slice_head(n = 1) %>%
-    ungroup() %>%
-    transmute(
-      department_type,
-      type = "Top Duty",
-      category = duty
-    )
+    count(department_type, category = duty, name = "n") %>%
+    mutate(type = "Duty")
 
-  top_activity <- df %>%
+  activity_counts <- df %>%
     filter(!is.na(activity), activity != "") %>%
-    count(department_type, activity, sort = TRUE) %>%
-    group_by(department_type) %>%
-    slice_head(n = 1) %>%
-    ungroup() %>%
-    transmute(
-      department_type,
-      type = "Top Activity",
-      category = activity
-    )
+    count(department_type, category = activity, name = "n") %>%
+    mutate(type = "Activity")
 
-  out <- bind_rows(top_duty, top_activity)
+  out <- bind_rows(duty_counts, activity_counts)
   if (nrow(out) == 0) return(NULL)
   out
 }
@@ -659,12 +649,12 @@ ui <- fluidPage(
           ),
           plotOutput("odds_plot", height = "320px"),
           tags$div(style = "margin-top: 12px;", uiOutput("odds_summary")),
-          h3("Top Duty and Activity by Personnel Type"),
+          h3("Duty and Activity Patterns by Personnel Type"),
           tags$p(
-            "Highlights the most common duty and activity associated with fatalities for each personnel type in your region.",
+            "Shows all duties and activities associated with fatalities for the selected personnel types in your region.",
             style = "color: var(--muted);"
           ),
-          plotOutput("duty_activity_plot", height = "320px")
+          plotOutput("duty_activity_plot", height = "360px")
         ),
         tabPanel(
           "Prevention Guidance",
@@ -1002,35 +992,33 @@ server <- function(input, output, session) {
   output$duty_activity_plot <- renderPlot({
     if (is.null(input$incident_types) || length(input$incident_types) == 0) return(NULL)
     df <- filtered()
-    summary_df <- summarize_duty_activity(df)
+    selected_personnel <- if (!is.null(input$dept_type) && length(input$dept_type) > 0) {
+      input$dept_type
+    } else {
+      character()
+    }
+    summary_df <- summarize_duty_activity(df, selected_personnel)
     if (is.null(summary_df) || nrow(summary_df) == 0) return(NULL)
-
-    categories <- unique(summary_df$category)
-    palette <- scales::hue_pal()(length(categories))
-    names(palette) <- categories
 
     summary_df <- summary_df %>%
       mutate(
-        department_type = factor(department_type, levels = rev(sort(unique(department_type)))),
-        label = str_trunc(category, 26)
+        department_type = factor(department_type, levels = sort(unique(department_type))),
+        type = factor(type, levels = c("Duty", "Activity"))
       )
 
-    ggplot(summary_df, aes(x = type, y = department_type, fill = category)) +
-      geom_tile(color = "#2a2a2f", linewidth = 0.6, alpha = 0.95) +
-      geom_text(aes(label = label), color = "#0b0b0c", size = 3.2, fontface = "bold") +
-      scale_fill_manual(values = palette) +
-      labs(x = NULL, y = NULL, fill = "Category") +
+    ggplot(summary_df, aes(x = n, y = reorder(category, n))) +
+      geom_col(fill = "#ff6a00", alpha = 0.9) +
+      facet_grid(department_type ~ type, scales = "free_y", space = "free_y") +
+      labs(x = "Fatality Count", y = NULL) +
       theme_minimal(base_size = 12) +
       theme(
         panel.background = element_rect(fill = "transparent", color = NA),
         plot.background = element_rect(fill = "transparent", color = NA),
-        panel.grid = element_blank(),
-        axis.text.x = element_text(color = "#c7c0b8", face = "bold"),
+        panel.grid.major.y = element_blank(),
+        axis.text.x = element_text(color = "#c7c0b8"),
         axis.text.y = element_text(color = "#c7c0b8"),
-        legend.background = element_rect(fill = "transparent", color = NA),
-        legend.key = element_rect(fill = "transparent", color = NA),
-        legend.text = element_text(color = "#c7c0b8"),
-        legend.title = element_text(color = "#f7f3ef")
+        strip.background = element_rect(fill = "#1c1c1f", color = "#2a2a2f"),
+        strip.text = element_text(color = "#f7f3ef", face = "bold")
       )
   })
 
