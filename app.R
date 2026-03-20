@@ -522,8 +522,6 @@ ui <- fluidPage(
       .app-header { display: flex; align-items: center; gap: 16px; padding: 18px 20px; background: linear-gradient(90deg, #2b0f0a, #1a0f0b 45%, #0b0b0c); border: 1px solid #2c2c31; border-radius: 14px; box-shadow: 0 12px 30px rgba(0,0,0,0.35); }
       .app-title { font-family: 'Bebas Neue', sans-serif; font-size: 38px; letter-spacing: 1px; margin: 0; }
       .app-subtitle { color: var(--muted); margin: 0; font-size: 14px; }
-      .maltese { width: 54px; height: 54px; }
-      .maltese svg { width: 100%; height: 100%; }
       .helmet { width: 48px; height: 48px; }
       .sidebar { background: var(--panel); border: 1px solid #2a2a2f; border-radius: 14px; padding: 16px; }
       .main { background: var(--panel-2); border: 1px solid #2a2a2f; border-radius: 14px; padding: 16px; }
@@ -562,17 +560,13 @@ ui <- fluidPage(
   tags$div(
     class = "app-header",
     tags$div(
-      class = "maltese",
-      HTML("<svg viewBox='0 0 120 120' xmlns='http://www.w3.org/2000/svg'><path d='M60 6l16 22 27-6-6 27 22 16-22 16 6 27-27-6-16 22-16-22-27 6 6-27-22-16 22-16-6-27 27 6z' fill='#ffb347'/><circle cx='60' cy='60' r='18' fill='#1a0f0b'/><circle cx='60' cy='60' r='10' fill='#ff6a00'/></svg>")
-    ),
-    tags$div(
       class = "helmet",
       HTML("<svg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'><path d='M8 36c0-14 11-26 24-26s24 12 24 26v10H8V36z' fill='#ff6a00'/><path d='M14 36c0-10 8-18 18-18s18 8 18 18v4H14v-4z' fill='#d63230'/><path d='M6 46h52v8H6z' fill='#ffb347'/><circle cx='32' cy='30' r='6' fill='#0b0b0c'/></svg>")
     ),
     tags$div(
       tags$h1(class = "app-title", "Firefighter Fatality Risk Dashboard"),
       tags$p(class = "app-subtitle", "Explore how your department can minimize potential for firefighter fatalities."),
-      tags$p(class = "app-subtitle", "Auto refreshes daily"),
+      tags$p(class = "app-subtitle", "Data auto refreshes daily"),
       tags$p(class = "app-subtitle", textOutput("last_refreshed")),
       tags$p(class = "app-subtitle", textOutput("data_source")),
       actionButton("refresh_data", "Refresh Data Now", class = "header-btn")
