@@ -489,11 +489,11 @@ summarize_duty_activity <- function(df, selected_personnel) {
   }
 
   duty_counts <- df %>%
-    filter(!is.na(duty), duty != "") %>%
+    filter(!is.na(duty), duty != "", !str_detect(duty, regex("^other$", ignore_case = TRUE))) %>%
     count(department_type, category = duty, name = "n")
 
   activity_counts <- df %>%
-    filter(!is.na(activity), activity != "") %>%
+    filter(!is.na(activity), activity != "", !str_detect(activity, regex("^other$", ignore_case = TRUE))) %>%
     count(department_type, category = activity, name = "n")
 
   list(
@@ -1005,8 +1005,7 @@ server <- function(input, output, session) {
 
     summary_df <- summary_df %>%
       mutate(
-        department_type = factor(department_type, levels = selected_personnel),
-        category = str_trunc(category, 22)
+        department_type = factor(department_type, levels = selected_personnel)
       ) %>%
       group_by(category) %>%
       mutate(total = sum(n, na.rm = TRUE)) %>%
@@ -1015,6 +1014,7 @@ server <- function(input, output, session) {
     ggplot(summary_df, aes(x = n, y = reorder(category, total), fill = department_type)) +
       geom_col(alpha = 0.9, position = "stack") +
       scale_fill_manual(values = personnel_palette[selected_personnel]) +
+      scale_y_discrete(labels = function(x) str_wrap(x, width = 30)) +
       labs(x = "Fatality Count", y = "Duty", fill = "Personnel Type") +
       theme_minimal(base_size = 12) +
       theme(
@@ -1045,8 +1045,7 @@ server <- function(input, output, session) {
 
     summary_df <- summary_df %>%
       mutate(
-        department_type = factor(department_type, levels = selected_personnel),
-        category = str_trunc(category, 22)
+        department_type = factor(department_type, levels = selected_personnel)
       ) %>%
       group_by(category) %>%
       mutate(total = sum(n, na.rm = TRUE)) %>%
@@ -1055,6 +1054,7 @@ server <- function(input, output, session) {
     ggplot(summary_df, aes(x = n, y = reorder(category, total), fill = department_type)) +
       geom_col(alpha = 0.9, position = "stack") +
       scale_fill_manual(values = personnel_palette[selected_personnel]) +
+      scale_y_discrete(labels = function(x) str_wrap(x, width = 30)) +
       labs(x = "Fatality Count", y = "Activity", fill = "Personnel Type") +
       theme_minimal(base_size = 12) +
       theme(
