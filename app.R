@@ -1007,10 +1007,13 @@ server <- function(input, output, session) {
       mutate(
         department_type = factor(department_type, levels = selected_personnel),
         category = str_trunc(category, 22)
-      )
+      ) %>%
+      group_by(category) %>%
+      mutate(total = sum(n, na.rm = TRUE)) %>%
+      ungroup()
 
-    ggplot(summary_df, aes(x = n, y = reorder(category, n), fill = department_type)) +
-      geom_col(alpha = 0.9, position = "dodge") +
+    ggplot(summary_df, aes(x = n, y = reorder(category, total), fill = department_type)) +
+      geom_col(alpha = 0.9, position = "stack") +
       scale_fill_manual(values = personnel_palette[selected_personnel]) +
       labs(x = "Fatality Count", y = "Duty", fill = "Personnel Type") +
       theme_minimal(base_size = 12) +
@@ -1044,10 +1047,13 @@ server <- function(input, output, session) {
       mutate(
         department_type = factor(department_type, levels = selected_personnel),
         category = str_trunc(category, 22)
-      )
+      ) %>%
+      group_by(category) %>%
+      mutate(total = sum(n, na.rm = TRUE)) %>%
+      ungroup()
 
-    ggplot(summary_df, aes(x = n, y = reorder(category, n), fill = department_type)) +
-      geom_col(alpha = 0.9, position = "dodge") +
+    ggplot(summary_df, aes(x = n, y = reorder(category, total), fill = department_type)) +
+      geom_col(alpha = 0.9, position = "stack") +
       scale_fill_manual(values = personnel_palette[selected_personnel]) +
       labs(x = "Fatality Count", y = "Activity", fill = "Personnel Type") +
       theme_minimal(base_size = 12) +
