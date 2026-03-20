@@ -665,7 +665,7 @@ ui <- fluidPage(
             style = "color: var(--muted);"
           ),
           plotOutput("duty_plot", height = "320px"),
-          plotOutput("activity_plot", height = "320px")
+          plotOutput("activity_plot", height = "520px")
         ),
         tabPanel(
           "Prevention Guidance",
@@ -1006,7 +1006,7 @@ server <- function(input, output, session) {
     summary_df <- summary_df %>%
       mutate(
         department_type = factor(department_type, levels = selected_personnel),
-        category = str_trunc(category, 28)
+        category = str_trunc(category, 22)
       )
 
     ggplot(summary_df, aes(x = n, y = reorder(category, n), fill = department_type)) +
@@ -1043,7 +1043,7 @@ server <- function(input, output, session) {
     summary_df <- summary_df %>%
       mutate(
         department_type = factor(department_type, levels = selected_personnel),
-        category = str_trunc(category, 28)
+        category = str_trunc(category, 22)
       )
 
     ggplot(summary_df, aes(x = n, y = reorder(category, n), fill = department_type)) +
