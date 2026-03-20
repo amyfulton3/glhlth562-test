@@ -710,7 +710,7 @@ ui <- fluidPage(
           "Training Plan",
           h3("Monthly Training Plan"),
           tags$p(
-            "Generates a 12-month training plan based on your region and historical fatality trends.",
+            "Generates a 12-month training plan based on your department characteristics and historical fatality trends.",
             style = "color: var(--muted);"
           ),
           checkboxGroupInput(
