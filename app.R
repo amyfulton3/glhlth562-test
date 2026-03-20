@@ -1166,9 +1166,9 @@ server <- function(input, output, session) {
       reports_state(list(status = "Please select at least one incident type that your department responds to.", analysis = NULL))
       return()
     }
-    df <- filtered()
+    df <- data_state()
     if (nrow(df) == 0) {
-      reports_state(list(status = "No records match the current filters.", analysis = NULL))
+      reports_state(list(status = "No records available to summarize.", analysis = NULL))
       return()
     }
 
@@ -1185,12 +1185,21 @@ server <- function(input, output, session) {
     }
 
     top_cause <- df %>% count(cause, sort = TRUE) %>% slice(1) %>% pull(cause)
-    top_incidents <- df %>% count(incident_category, sort = TRUE) %>% slice(1:2) %>% pull(incident_category)
+    top_incidents <- df %>% count(incident_category, sort = TRUE) %>% slice(1:3) %>% pull(incident_category)
+    top_duty <- df %>% filter(!is.na(duty)) %>% count(duty, sort = TRUE) %>% slice(1:3) %>% pull(duty)
+    top_activity <- df %>%
+      mutate(activity = coalesce(incident_type, incident_category, emergency, property_type)) %>%
+      filter(!is.na(activity)) %>%
+      count(activity, sort = TRUE) %>%
+      slice(1:3) %>%
+      pull(activity)
     trend <- df %>% count(year) %>% arrange(desc(year))
 
     trend_text <- paste0(
       "Top cause: ", top_cause, ". ",
       "Top incident types: ", paste(top_incidents, collapse = ", "), ". ",
+      "Common duties in fatality data: ", paste(top_duty, collapse = ", "), ". ",
+      "Common activities in fatality data: ", paste(top_activity, collapse = ", "), ". ",
       "Most recent year in data: ", ifelse(nrow(trend) > 0, trend$year[1], "unknown"), "."
     )
 
