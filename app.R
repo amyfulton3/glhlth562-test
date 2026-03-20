@@ -462,6 +462,17 @@ compute_incident_odds <- function(df, top_n = 6) {
   out
 }
 
+personnel_palette <- c(
+  "Volunteer" = "#ffb347",
+  "Career" = "#ff6a00",
+  "Wildland Contract" = "#f05d23",
+  "Wildland Full-Time" = "#d63230",
+  "Wildland Part-Time" = "#ff8f1f",
+  "Paid-on-Call" = "#f2c94c",
+  "Part-Time (Paid)" = "#ffa07a",
+  "Industrial" = "#ffd166"
+)
+
 summarize_duty_activity <- function(df, selected_personnel) {
   if (nrow(df) == 0) return(NULL)
 
@@ -479,17 +490,16 @@ summarize_duty_activity <- function(df, selected_personnel) {
 
   duty_counts <- df %>%
     filter(!is.na(duty), duty != "") %>%
-    count(department_type, category = duty, name = "n") %>%
-    mutate(type = "Duty")
+    count(department_type, category = duty, name = "n")
 
   activity_counts <- df %>%
     filter(!is.na(activity), activity != "") %>%
-    count(department_type, category = activity, name = "n") %>%
-    mutate(type = "Activity")
+    count(department_type, category = activity, name = "n")
 
-  out <- bind_rows(duty_counts, activity_counts)
-  if (nrow(out) == 0) return(NULL)
-  out
+  list(
+    duty = if (nrow(duty_counts) > 0) duty_counts else NULL,
+    activity = if (nrow(activity_counts) > 0) activity_counts else NULL
+  )
 }
 
 # ---- UI ----
@@ -654,7 +664,8 @@ ui <- fluidPage(
             "Shows all duties and activities associated with fatalities for the selected personnel types in your region.",
             style = "color: var(--muted);"
           ),
-          plotOutput("duty_activity_plot", height = "360px")
+          plotOutput("duty_plot", height = "320px"),
+          plotOutput("activity_plot", height = "320px")
         ),
         tabPanel(
           "Prevention Guidance",
@@ -939,17 +950,7 @@ server <- function(input, output, session) {
         is_selected = department_type %in% selected_personnel
       )
 
-    selected_palette <- c(
-      "Volunteer" = "#ffb347",
-      "Career" = "#ff6a00",
-      "Wildland Contract" = "#f05d23",
-      "Wildland Full-Time" = "#d63230",
-      "Wildland Part-Time" = "#ff8f1f",
-      "Paid-on-Call" = "#f2c94c",
-      "Part-Time (Paid)" = "#ffa07a",
-      "Industrial" = "#ffd166"
-    )
-    palette <- c(selected_palette[selected_personnel], "Unselected" = "#6c757d")
+    palette <- c(personnel_palette[selected_personnel], "Unselected" = "#6c757d")
 
     x_left <- min(odds_df$or, na.rm = TRUE) * 0.85
     x_right <- max(odds_df$or, na.rm = TRUE) * 1.15
@@ -989,7 +990,7 @@ server <- function(input, output, session) {
       )
   })
 
-  output$duty_activity_plot <- renderPlot({
+  output$duty_plot <- renderPlot({
     if (is.null(input$incident_types) || length(input$incident_types) == 0) return(NULL)
     df <- filtered()
     selected_personnel <- if (!is.null(input$dept_type) && length(input$dept_type) > 0) {
@@ -997,19 +998,21 @@ server <- function(input, output, session) {
     } else {
       character()
     }
-    summary_df <- summarize_duty_activity(df, selected_personnel)
+    if (length(selected_personnel) == 0) return(NULL)
+    summary_list <- summarize_duty_activity(df, selected_personnel)
+    summary_df <- summary_list$duty
     if (is.null(summary_df) || nrow(summary_df) == 0) return(NULL)
 
     summary_df <- summary_df %>%
       mutate(
-        department_type = factor(department_type, levels = sort(unique(department_type))),
-        type = factor(type, levels = c("Duty", "Activity"))
+        department_type = factor(department_type, levels = selected_personnel),
+        category = str_trunc(category, 28)
       )
 
-    ggplot(summary_df, aes(x = n, y = reorder(category, n))) +
-      geom_col(fill = "#ff6a00", alpha = 0.9) +
-      facet_grid(department_type ~ type, scales = "free_y", space = "free_y") +
-      labs(x = "Fatality Count", y = NULL) +
+    ggplot(summary_df, aes(x = n, y = reorder(category, n), fill = department_type)) +
+      geom_col(alpha = 0.9, position = "dodge") +
+      scale_fill_manual(values = personnel_palette[selected_personnel]) +
+      labs(x = "Fatality Count", y = "Duty", fill = "Personnel Type") +
       theme_minimal(base_size = 12) +
       theme(
         panel.background = element_rect(fill = "transparent", color = NA),
@@ -1017,8 +1020,47 @@ server <- function(input, output, session) {
         panel.grid.major.y = element_blank(),
         axis.text.x = element_text(color = "#c7c0b8"),
         axis.text.y = element_text(color = "#c7c0b8"),
-        strip.background = element_rect(fill = "#1c1c1f", color = "#2a2a2f"),
-        strip.text = element_text(color = "#f7f3ef", face = "bold")
+        legend.background = element_rect(fill = "transparent", color = NA),
+        legend.key = element_rect(fill = "transparent", color = NA),
+        legend.text = element_text(color = "#c7c0b8"),
+        legend.title = element_text(color = "#f7f3ef")
+      )
+  })
+
+  output$activity_plot <- renderPlot({
+    if (is.null(input$incident_types) || length(input$incident_types) == 0) return(NULL)
+    df <- filtered()
+    selected_personnel <- if (!is.null(input$dept_type) && length(input$dept_type) > 0) {
+      input$dept_type
+    } else {
+      character()
+    }
+    if (length(selected_personnel) == 0) return(NULL)
+    summary_list <- summarize_duty_activity(df, selected_personnel)
+    summary_df <- summary_list$activity
+    if (is.null(summary_df) || nrow(summary_df) == 0) return(NULL)
+
+    summary_df <- summary_df %>%
+      mutate(
+        department_type = factor(department_type, levels = selected_personnel),
+        category = str_trunc(category, 28)
+      )
+
+    ggplot(summary_df, aes(x = n, y = reorder(category, n), fill = department_type)) +
+      geom_col(alpha = 0.9, position = "dodge") +
+      scale_fill_manual(values = personnel_palette[selected_personnel]) +
+      labs(x = "Fatality Count", y = "Activity", fill = "Personnel Type") +
+      theme_minimal(base_size = 12) +
+      theme(
+        panel.background = element_rect(fill = "transparent", color = NA),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        panel.grid.major.y = element_blank(),
+        axis.text.x = element_text(color = "#c7c0b8"),
+        axis.text.y = element_text(color = "#c7c0b8"),
+        legend.background = element_rect(fill = "transparent", color = NA),
+        legend.key = element_rect(fill = "transparent", color = NA),
+        legend.text = element_text(color = "#c7c0b8"),
+        legend.title = element_text(color = "#f7f3ef")
       )
   })
 
