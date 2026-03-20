@@ -659,6 +659,7 @@ ui <- fluidPage(
           h3("Fatality Risk Summary"),
           textOutput("risk_summary"),
           tableOutput("top_causes"),
+          h3("Fatalities Over Time"),
           plotOutput("trend_plot", height = "250px"),
           h3("Incident Mix Over Time"),
           plotOutput("incident_mix_plot", height = "300px"),
@@ -773,6 +774,7 @@ ui <- fluidPage(
             "Rank Category",
             choices = c("All", "Firefighter/EMT", "Driver/Engineer", "Officer", "Chief/Command", "Specialist/Other")
           ),
+          h3("Fatalities Over Time"),
           plotOutput("profile_trend_plot", height = "260px"),
           h3("Top Causes"),
           plotOutput("profile_cause_plot", height = "260px"),
@@ -977,10 +979,14 @@ server <- function(input, output, session) {
     df %>%
       filter(!is.na(year), !is.na(incident_category)) %>%
       count(year, incident_category) %>%
-      ggplot(aes(x = year, y = n, fill = incident_category)) +
+      group_by(year) %>%
+      mutate(pct = n / sum(n)) %>%
+      ungroup() %>%
+      ggplot(aes(x = year, y = pct, fill = incident_category)) +
       geom_col() +
       scale_fill_manual(values = palette) +
-      labs(x = "Year", y = "Fatalities", fill = "Incident Type") +
+      scale_y_continuous(labels = scales::percent) +
+      labs(x = "Year", y = "Share of Fatalities", fill = "Incident Type") +
       theme_minimal(base_size = 12) +
       theme(
         panel.background = element_rect(fill = "transparent", color = NA),
