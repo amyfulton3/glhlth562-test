@@ -688,7 +688,7 @@ ui <- fluidPage(
           "Incident Reports",
           h3("Incident Report Analysis"),
           tags$p(
-            "Paste multiple incident reports below. The LLM will summarize key fatality risks and recommendations using regional trends.",
+            "Paste multiple incident reports below. The LLM will summarize key fatality risks and recommendations using historical trends.",
             style = "color: var(--muted);"
           ),
           textAreaInput(
