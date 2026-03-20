@@ -524,6 +524,7 @@ ui <- fluidPage(
       .app-subtitle { color: var(--muted); margin: 0; font-size: 14px; }
       .helmet { width: 48px; height: 48px; }
       .sidebar { background: var(--panel); border: 1px solid #2a2a2f; border-radius: 14px; padding: 16px; }
+      .sidebar-title { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 0.6px; color: #ffb347; margin-bottom: 8px; }
       .main { background: var(--panel-2); border: 1px solid #2a2a2f; border-radius: 14px; padding: 16px; }
       h3 { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.5px; color: var(--accent-3); margin-top: 10px; }
       .control-label { color: var(--muted); font-weight: 600; }
@@ -576,7 +577,7 @@ ui <- fluidPage(
   sidebarLayout(
     sidebarPanel(
       class = "sidebar",
-      tags$div("Enter your department details"),
+      tags$div(class = "sidebar-title", "Enter your department details"),
 
       radioButtons(
         "geo_mode",
