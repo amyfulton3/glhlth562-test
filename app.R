@@ -752,6 +752,7 @@ ui <- fluidPage(
           sliderInput("profile_age", "Age Range", min = 20, max = 70, value = c(25, 55)),
           selectInput("profile_gender", "Gender (if available)", choices = c("All")),
           selectInput("profile_role", "Role / Classification", choices = c("All")),
+          selectInput("profile_rank", "Rank", choices = c("All")),
           tags$p(class = "app-subtitle", textOutput("gender_note")),
           plotOutput("profile_trend_plot", height = "260px"),
           h3("Top Causes"),
@@ -795,6 +796,13 @@ server <- function(input, output, session) {
       updateSelectInput(session, "profile_gender", choices = c("All", genders), selected = "All")
     } else {
       updateSelectInput(session, "profile_gender", choices = c("All"), selected = "All")
+    }
+
+    if (!all(is.na(df$rank))) {
+      ranks <- sort(unique(na.omit(df$rank)))
+      updateSelectInput(session, "profile_rank", choices = c("All", ranks), selected = "All")
+    } else {
+      updateSelectInput(session, "profile_rank", choices = c("All"), selected = "All")
     }
 
     if (!all(is.na(df$age))) {
@@ -841,6 +849,12 @@ server <- function(input, output, session) {
     if (!is.null(input$profile_gender) && input$profile_gender != "All") {
       if (!all(is.na(df$gender))) {
         df <- df %>% filter(gender == input$profile_gender)
+      }
+    }
+
+    if (!is.null(input$profile_rank) && input$profile_rank != "All") {
+      if (!all(is.na(df$rank))) {
+        df <- df %>% filter(rank == input$profile_rank)
       }
     }
 
