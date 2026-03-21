@@ -860,7 +860,9 @@ ui <- fluidPage(
       .card { background: #141417; border: 1px solid #2a2a2f; border-radius: 12px; padding: 12px 14px; margin: 10px 0; box-shadow: 0 6px 16px rgba(0,0,0,0.25); }
       .card-title { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.5px; color: #ffb347; margin-bottom: 6px; }
       .card ul { margin: 0 0 0 16px; }
-      .nav-tabs { border-bottom: 1px solid #2a2a2f; }
+      .nav-tabs { border-bottom: 1px solid #2a2a2f; display: flex; flex-wrap: nowrap; gap: 6px; overflow-x: auto; white-space: nowrap; }
+      .nav-tabs > li { float: none; }
+      .nav-tabs > li > a { font-size: 13px; padding: 8px 10px; }
       .nav-tabs > li > a { color: var(--muted); background: #111114; border: 1px solid #2a2a2f; margin-right: 6px; border-radius: 8px 8px 0 0; }
       .nav-tabs > li > a:hover { color: var(--text); background: #1a1a1d; }
       .nav-tabs > li.active > a,
@@ -868,9 +870,9 @@ ui <- fluidPage(
       .nav-tabs > li.active > a:focus { color: var(--text); background: #1c1c1f; border-bottom-color: transparent; }
       .tab-divider { pointer-events: none; }
       .tab-divider > a { color: #ffb347 !important; background: transparent !important; border: none !important; text-transform: uppercase; letter-spacing: 1px; font-size: 11px; padding: 6px 8px; }
-      .tab-divider.disaster > a { color: #7dd3fc !important; }
+      .tab-divider.disaster > a { color: #ffb347 !important; }
       .tab-fatality { color: #ffb347; }
-      .tab-disaster { color: #7dd3fc; }
+      .tab-disaster { color: #ffb347; }
       .global-spinner { display: none; position: fixed; top: 16px; right: 20px; width: 22px; height: 22px; border: 3px solid #2a2a2f; border-top-color: #ff6a00; border-radius: 50%; animation: spin 0.8s linear infinite; z-index: 9999; }
       .global-spinner.show { display: inline-block; }
       .btn-inline { display: inline-flex; align-items: center; gap: 8px; }
@@ -894,11 +896,11 @@ ui <- fluidPage(
       HTML("<svg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'><path d='M8 36c0-14 11-26 24-26s24 12 24 26v10H8V36z' fill='#ff6a00'/><path d='M14 36c0-10 8-18 18-18s18 8 18 18v4H14v-4z' fill='#d63230'/><path d='M6 46h52v8H6z' fill='#ffb347'/><circle cx='32' cy='30' r='6' fill='#0b0b0c'/></svg>")
     ),
     tags$div(
-      tags$h1(class = "app-title", "Firefighter Fatality Management and Disaster Preparedness"),
+      tags$h1(class = "app-title", "Fire Department Preparedness Dashboard"),
       tags$p(class = "app-subtitle", "Is your department ready for the unexpected? Explore how your department can minimize potential for firefighter fatalities and prepare to respond to large-scale disasters."),
       tags$p(class = "app-subtitle", "Data auto refreshes daily"),
       tags$p(class = "app-subtitle", textOutput("last_refreshed")),
-      tags$p(class = "app-subtitle", "Data sources: USFA Fatalities, Census ACS, FEMA Disasters"),
+      tags$p(class = "app-subtitle", "Data sources: USFA Fatalities, Census ACS, FEMA Disasters, FEMA HMA, FEMA Public Assistance"),
       actionButton("refresh_data", "Refresh Data Now", class = "header-btn")
     )
   ),
@@ -983,8 +985,7 @@ ui <- fluidPage(
           h3("Incident Mix Over Time"),
           plotOutput("incident_mix_plot", height = "300px"),
           h3("Top Causes (Selected Filters)"),
-          plotOutput("cause_plot", height = "260px"),
-          NULL
+          plotOutput("cause_plot", height = "260px")
         ),
         tabPanel(
           title = tags$span("Fatality Risk Gauge", class = "tab-fatality"),
