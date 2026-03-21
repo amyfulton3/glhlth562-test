@@ -316,6 +316,7 @@ generate_disaster_plan <- function(summary_text, model = default_model) {
     "Focus on operational readiness, be practical and specific.",
     "Do not overstate certainty.",
     "Consider how population density affects response complexity.",
+    "Consider whether mitigation investment and fire station assistance suggest readiness gaps.",
     "Return sections:",
     "Risk Overview (2-3 sentences)",
     "Preparedness Priorities (bullet points)",
@@ -439,6 +440,123 @@ get_fema_types <- function(max_pages = 5, page_size = 5000) {
     mutate(state = toupper(state)) %>%
     filter(!is.na(incidentType), incidentType != "") %>%
     count(state, incidentType, name = "count")
+}
+
+get_fema_declarations <- function(max_pages = 5, page_size = 5000) {
+  base <- "https://www.fema.gov/api/open/v2/DisasterDeclarationsSummaries"
+  all_rows <- list()
+
+  for (i in seq_len(max_pages)) {
+    skip <- (i - 1) * page_size
+    url <- paste0(
+      base,
+      "?$select=state,incidentType,declarationDate,ihProgramDeclared,paProgramDeclared,declaredCountyArea",
+      "&$top=", page_size,
+      "&$skip=", skip
+    )
+    resp <- tryCatch(httr::GET(url), error = function(e) NULL)
+    if (is.null(resp) || httr::status_code(resp) >= 400) break
+
+    raw <- tryCatch(jsonlite::fromJSON(httr::content(resp, as = "text", encoding = "UTF-8")), error = function(e) NULL)
+    if (is.null(raw$DisasterDeclarationsSummaries) || nrow(raw$DisasterDeclarationsSummaries) == 0) break
+    all_rows[[length(all_rows) + 1]] <- raw$DisasterDeclarationsSummaries
+
+    if (nrow(raw$DisasterDeclarationsSummaries) < page_size) break
+  }
+
+  if (length(all_rows) == 0) return(NULL)
+
+  bind_rows(all_rows) %>%
+    mutate(
+      state = toupper(state),
+      declarationDate = as.Date(declarationDate),
+      year = suppressWarnings(lubridate::year(declarationDate))
+    )
+}
+
+get_openfema_fields <- function(dataset, version = 2) {
+  url <- paste0(
+    "https://www.fema.gov/api/open/v1/OpenFemaDataSetFields?$filter=",
+    "openFemaDataSet%20eq%20%27", dataset, "%27%20and%20datasetVersion%20eq%20", version
+  )
+  resp <- tryCatch(httr::GET(url), error = function(e) NULL)
+  if (is.null(resp) || httr::status_code(resp) >= 400) return(NULL)
+  raw <- tryCatch(jsonlite::fromJSON(httr::content(resp, as = "text", encoding = "UTF-8")), error = function(e) NULL)
+  if (is.null(raw$OpenFemaDataSetFields)) return(NULL)
+  raw$OpenFemaDataSetFields$name
+}
+
+get_hma_grants <- function(max_pages = 5, page_size = 5000) {
+  fields <- get_openfema_fields("HmaSubapplications", 2)
+  if (is.null(fields)) return(NULL)
+
+  state_field <- pick_col(data.frame(name = fields), c("state", "applicantState", "projectState", "recipientState")) %>%
+    (`[[`)(1)
+  amount_field <- pick_col(data.frame(name = fields), c("federalShareAmount", "totalFederalShareAmount", "managementFederalShareAmount", "federalShareObligated", "federalShare", "federalShareObligatedAmount")) %>%
+    (`[[`)(1)
+
+  if (is.na(state_field)) return(NULL)
+  select_fields <- if (!is.na(amount_field)) paste0(state_field, ",", amount_field) else state_field
+
+  base <- "https://www.fema.gov/api/open/v2/HmaSubapplications"
+  all_rows <- list()
+  for (i in seq_len(max_pages)) {
+    skip <- (i - 1) * page_size
+    url <- paste0(
+      base,
+      "?$select=", select_fields,
+      "&$top=", page_size,
+      "&$skip=", skip
+    )
+    resp <- tryCatch(httr::GET(url), error = function(e) NULL)
+    if (is.null(resp) || httr::status_code(resp) >= 400) break
+
+    raw <- tryCatch(jsonlite::fromJSON(httr::content(resp, as = "text", encoding = "UTF-8")), error = function(e) NULL)
+    if (is.null(raw$HmaSubapplications) || nrow(raw$HmaSubapplications) == 0) break
+    all_rows[[length(all_rows) + 1]] <- raw$HmaSubapplications
+    if (nrow(raw$HmaSubapplications) < page_size) break
+  }
+
+  if (length(all_rows) == 0) return(NULL)
+  df <- bind_rows(all_rows)
+  df <- df %>% mutate(state = toupper(.data[[state_field]]))
+
+  if (!is.na(amount_field) && amount_field %in% names(df)) {
+    df %>%
+      mutate(amount = suppressWarnings(as.numeric(.data[[amount_field]]))) %>%
+      group_by(state) %>%
+      summarize(mitigation_investment = sum(amount, na.rm = TRUE), .groups = "drop")
+  } else {
+    df %>%
+      group_by(state) %>%
+      summarize(mitigation_investment = n(), .groups = "drop")
+  }
+}
+
+get_pa_fire_applicants <- function(max_pages = 5, page_size = 5000) {
+  base <- "https://www.fema.gov/api/open/v1/PublicAssistanceApplicants"
+  all_rows <- list()
+  for (i in seq_len(max_pages)) {
+    skip <- (i - 1) * page_size
+    url <- paste0(
+      base,
+      "?$select=state,applicantName",
+      "&$filter=contains(applicantName,'Fire')",
+      "&$top=", page_size,
+      "&$skip=", skip
+    )
+    resp <- tryCatch(httr::GET(url), error = function(e) NULL)
+    if (is.null(resp) || httr::status_code(resp) >= 400) break
+    raw <- tryCatch(jsonlite::fromJSON(httr::content(resp, as = "text", encoding = "UTF-8")), error = function(e) NULL)
+    if (is.null(raw$PublicAssistanceApplicants) || nrow(raw$PublicAssistanceApplicants) == 0) break
+    all_rows[[length(all_rows) + 1]] <- raw$PublicAssistanceApplicants
+    if (nrow(raw$PublicAssistanceApplicants) < page_size) break
+  }
+  if (length(all_rows) == 0) return(NULL)
+  bind_rows(all_rows) %>%
+    mutate(state = toupper(state)) %>%
+    group_by(state) %>%
+    summarize(fire_applicant_count = n(), .groups = "drop")
 }
 
 # ---- Formatting: incident analysis ----
@@ -981,6 +1099,44 @@ ui <- fluidPage(
           tableOutput("training_table"),
           textOutput("training_plan")
         ),
+        tabPanel(
+          title = tags$span("Individual Guidance", class = "tab-fatality"),
+          h3("Individualized Risk Profile"),
+          tags$p(
+            "Explore historical fatality patterns for firefighters who match your profile.",
+            style = "color: var(--muted);"
+          ),
+          selectInput(
+            "profile_age_range",
+            "Age Range",
+            choices = c("All", "20-29", "30-39", "40-49", "50-59", "60-69", "70+"),
+            selected = "All"
+          ),
+          selectInput("profile_role", "Role / Classification", choices = c("All")),
+          selectInput(
+            "profile_rank",
+            "Rank Category",
+            choices = c("All", "Firefighter/EMT", "Driver/Engineer", "Officer", "Chief/Command", "Specialist/Other")
+          ),
+          h3("Fatalities Over Time"),
+          plotOutput("profile_trend_plot", height = "260px"),
+          h3("Top Causes"),
+          plotOutput("profile_cause_plot", height = "260px"),
+          h3("Top Incident Types"),
+          plotOutput("profile_incident_plot", height = "260px"),
+          h3("Recent Incident Summary"),
+          tags$p(
+            "Summarize up to 10 of the most recent incident reports that match your profile (fewer if fewer are available).",
+            style = "color: var(--muted);"
+          ),
+          tags$div(
+            class = "btn-inline",
+            actionButton("profile_analyze", "Analyze Recent Reports"),
+            conditionalPanel("output.profile_busy == true", tags$span(class = "inline-spinner"))
+          ),
+          textOutput("profile_status"),
+          uiOutput("profile_analysis")
+        ),
         tags$li(class = "tab-divider disaster", tags$a("Disaster Preparedness", href = "#")),
         tabPanel(
           title = tags$span("Disaster Risk Gauge", class = "tab-disaster"),
@@ -1031,44 +1187,6 @@ ui <- fluidPage(
           ),
           textOutput("disaster_status"),
           textOutput("disaster_plan")
-        ),
-        tabPanel(
-          title = tags$span("Individual Guidance", class = "tab-disaster"),
-          h3("Individualized Risk Profile"),
-          tags$p(
-            "Explore historical fatality patterns for firefighters who match your profile.",
-            style = "color: var(--muted);"
-          ),
-          selectInput(
-            "profile_age_range",
-            "Age Range",
-            choices = c("All", "20-29", "30-39", "40-49", "50-59", "60-69", "70+"),
-            selected = "All"
-          ),
-          selectInput("profile_role", "Role / Classification", choices = c("All")),
-          selectInput(
-            "profile_rank",
-            "Rank Category",
-            choices = c("All", "Firefighter/EMT", "Driver/Engineer", "Officer", "Chief/Command", "Specialist/Other")
-          ),
-          h3("Fatalities Over Time"),
-          plotOutput("profile_trend_plot", height = "260px"),
-          h3("Top Causes"),
-          plotOutput("profile_cause_plot", height = "260px"),
-          h3("Top Incident Types"),
-          plotOutput("profile_incident_plot", height = "260px"),
-          h3("Recent Incident Summary"),
-          tags$p(
-            "Summarize up to 10 of the most recent incident reports that match your profile (fewer if fewer are available).",
-            style = "color: var(--muted);"
-          ),
-          tags$div(
-            class = "btn-inline",
-            actionButton("profile_analyze", "Analyze Recent Reports"),
-            conditionalPanel("output.profile_busy == true", tags$span(class = "inline-spinner"))
-          ),
-          textOutput("profile_status"),
-          uiOutput("profile_analysis")
         )
       )
     )
@@ -1083,6 +1201,9 @@ server <- function(input, output, session) {
   census_state <- reactiveVal(get_census_data())
   fema_state <- reactiveVal(get_fema_data())
   fema_types_state <- reactiveVal(get_fema_types())
+  fema_decl_state <- reactiveVal(get_fema_declarations())
+  hma_state <- reactiveVal(get_hma_grants())
+  pa_fire_state <- reactiveVal(get_pa_fire_applicants())
   llm_state <- reactiveVal(list(status = "LLM guidance not generated yet.", guidance = NULL))
   reports_state <- reactiveVal(list(status = "No reports analyzed yet.", analysis = NULL))
   training_state <- reactiveVal(list(status = "No training plan generated yet.", plan = NULL))
@@ -1211,6 +1332,9 @@ server <- function(input, output, session) {
     census_state(get_census_data())
     fema_state(get_fema_data())
     fema_types_state(get_fema_types())
+    fema_decl_state(get_fema_declarations())
+    hma_state(get_hma_grants())
+    pa_fire_state(get_pa_fire_applicants())
   })
 
   observeEvent(input$refresh_data, {
@@ -1219,12 +1343,18 @@ server <- function(input, output, session) {
     census_state(get_census_data())
     fema_state(get_fema_data())
     fema_types_state(get_fema_types())
+    fema_decl_state(get_fema_declarations())
+    hma_state(get_hma_grants())
+    pa_fire_state(get_pa_fire_applicants())
   })
 
   observeEvent(data_state(), {
     if (is.null(census_state())) census_state(get_census_data())
     if (is.null(fema_state())) fema_state(get_fema_data())
     if (is.null(fema_types_state())) fema_types_state(get_fema_types())
+    if (is.null(fema_decl_state())) fema_decl_state(get_fema_declarations())
+    if (is.null(hma_state())) hma_state(get_hma_grants())
+    if (is.null(pa_fire_state())) pa_fire_state(get_pa_fire_applicants())
   })
 
   output$data_source <- renderText({
@@ -1499,6 +1629,16 @@ server <- function(input, output, session) {
     data <- model_data()
     if (is.null(summary) || is.null(data)) return(NULL)
 
+    decl <- fema_decl_state()
+    states <- geo_states()
+    last5_count <- NA
+    if (!is.null(decl) && length(states) > 0) {
+      recent <- decl %>%
+        filter(state %in% states, !is.na(year)) %>%
+        filter(year >= max(year, na.rm = TRUE) - 4)
+      last5_count <- nrow(recent)
+    }
+
     disasters_per_100k <- ifelse(summary$population > 0,
                                  (summary$disaster_count / summary$population) * 100000,
                                  NA_real_)
@@ -1520,7 +1660,8 @@ server <- function(input, output, session) {
       density = summary$pop_density,
       density_label = density_label,
       population = summary$population,
-      disaster_count = summary$disaster_count
+      disaster_count = summary$disaster_count,
+      disasters_last5 = last5_count
     )
   })
 
@@ -1534,14 +1675,35 @@ server <- function(input, output, session) {
       ))
     }
 
+    mitigation <- hma_state()
+    fire_support <- pa_fire_state()
+    states <- geo_states()
+
+    mitigation_value <- if (!is.null(mitigation) && length(states) > 0) {
+      mitigation %>%
+        filter(state %in% states) %>%
+        summarize(total = sum(mitigation_investment, na.rm = TRUE)) %>%
+        pull(total)
+    } else NA_real_
+
+    fire_support_count <- if (!is.null(fire_support) && length(states) > 0) {
+      fire_support %>%
+        filter(state %in% states) %>%
+        summarize(total = sum(fire_applicant_count, na.rm = TRUE)) %>%
+        pull(total)
+    } else NA_real_
+
     tags$div(
       class = "card",
       tags$div(class = "card-title", "Disaster Risk Summary"),
       tags$p(paste0("Population: ", format(round(info$population), big.mark = ","))),
       tags$p(paste0("Disaster declarations: ", info$disaster_count)),
+      tags$p(paste0("Disasters in last 5 years: ", ifelse(is.na(info$disasters_last5), "NA", info$disasters_last5))),
       tags$p(paste0("Disasters per 100k: ", round(info$disasters_per_100k, 2))),
       tags$p(paste0("Estimated population at risk: ", format(round(info$population_at_risk), big.mark = ","))),
-      tags$p(paste0("Population density: ", ifelse(is.na(info$density), "NA", round(info$density, 1)), " per sq. mile (", info$density_label, ")"))
+      tags$p(paste0("Population density: ", ifelse(is.na(info$density), "NA", round(info$density, 1)), " per sq. mile (", info$density_label, ")")),
+      tags$p(paste0("Mitigation investment (HMA): ", ifelse(is.na(mitigation_value), "NA", format(round(mitigation_value), big.mark = ",")))),
+      tags$p(paste0("Fire-related PA applicants: ", ifelse(is.na(fire_support_count), "NA", fire_support_count)))
     )
   })
 
@@ -2384,17 +2546,47 @@ server <- function(input, output, session) {
     }
 
     types <- fema_types_state()
+    decl <- fema_decl_state()
     states <- geo_states()
-    top_types <- if (!is.null(types)) {
-      types %>%
+    top_types <- character()
+    type_summary <- character()
+    if (!is.null(types) && length(states) > 0) {
+      top_types <- types %>%
         filter(state %in% states) %>%
         group_by(incidentType) %>%
         summarize(count = sum(count), .groups = "drop") %>%
-        slice_max(order_by = count, n = 3, with_ties = FALSE) %>%
-        pull(incidentType)
-    } else {
-      character()
+        slice_max(order_by = count, n = 3, with_ties = FALSE)
+      type_summary <- paste(paste0(top_types$incidentType, " (", top_types$count, ")"), collapse = ", ")
+      top_types <- top_types$incidentType
     }
+
+    last5_summary <- ""
+    if (!is.null(decl) && length(states) > 0) {
+      last5 <- decl %>%
+        filter(state %in% states, !is.na(year)) %>%
+        filter(year >= max(year, na.rm = TRUE) - 4) %>%
+        count(incidentType, sort = TRUE) %>%
+        slice_head(n = 3)
+      if (nrow(last5) > 0) {
+        last5_summary <- paste(paste0(last5$incidentType, " (", last5$n, ")"), collapse = ", ")
+      }
+    }
+
+    mitigation <- hma_state()
+    fire_support <- pa_fire_state()
+    mitigation_value <- if (!is.null(mitigation) && length(states) > 0) {
+      mitigation %>%
+        filter(state %in% states) %>%
+        summarize(total = sum(mitigation_investment, na.rm = TRUE)) %>%
+        pull(total)
+    } else NA_real_
+
+    fire_support_count <- if (!is.null(fire_support) && length(states) > 0) {
+      fire_support %>%
+        filter(state %in% states) %>%
+        summarize(total = sum(fire_applicant_count, na.rm = TRUE)) %>%
+        pull(total)
+    } else NA_real_
 
     summary_text <- paste(
       "Region:", ifelse(input$geo_mode == "state", input$state, input$region),
@@ -2402,7 +2594,10 @@ server <- function(input, output, session) {
       "Estimated population at risk:", round(info$population_at_risk),
       "Disaster frequency per 100k:", round(info$disasters_per_100k, 2),
       "Population density per sq mile:", round(info$density, 1),
-      "Top disaster types:", paste(top_types, collapse = ", "),
+      "Top disaster types (all years):", ifelse(type_summary == "", "NA", type_summary),
+      "Top disaster types (last 5 years):", ifelse(last5_summary == "", "NA", last5_summary),
+      "Mitigation investment (HMA):", ifelse(is.na(mitigation_value), "NA", round(mitigation_value)),
+      "Fire-related PA applicants:", ifelse(is.na(fire_support_count), "NA", fire_support_count),
       "Percent volunteer:", input$percent_volunteer,
       "Incident exposure level:", input$incident_exposure
     )

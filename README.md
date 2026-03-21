@@ -21,6 +21,12 @@ This is a **data product** (not a static report). It accepts user input about re
   Population, median age, and median household income for risk normalization.
 - **FEMA Disaster Declarations Summaries API**  
   Disaster counts by state as an operational exposure proxy.
+- **FEMA Disaster Declarations (detail)**  
+  Incident types, dates, and program flags for disaster trends.
+- **FEMA Hazard Mitigation Assistance (HMA) subapplications**  
+  Mitigation investment proxy by state.
+- **FEMA Public Assistance Applicants (fire-related)**  
+  Proxy for disaster response burden on fire services.
 
 ### 2) Ingestion
 
