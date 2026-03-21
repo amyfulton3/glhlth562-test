@@ -84,6 +84,17 @@ CENSUS_API_KEY=your_key_here
 
 Restart R after setting the key.
 
+### Posit Connect Cloud
+
+To use the Census API in Connect Cloud, set an app-level environment variable:
+
+1. Open your app in Posit Connect Cloud.
+2. Click **Settings** (gear icon).
+3. Add an **Environment Variable**:
+   - Name: `CENSUS_API_KEY`
+   - Value: your key
+4. Save, then republish/restart the app.
+
 ## Daily data refresh (USFA feed + API)
 
 The app checks the USFA RSS feed once every 24 hours. If a newer `pubDate` is found, it downloads the latest CSV and caches it at `data/fatalities.csv`. The app will fall back to your local `ff_data.csv` if the API is unavailable.
