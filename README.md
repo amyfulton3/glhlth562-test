@@ -21,6 +21,8 @@ This is a **data product** (not a static report). It accepts user input about re
   Population, median age, and median household income for risk normalization.
 - **FEMA Disaster Declarations Summaries API**  
   Disaster counts by state as an operational exposure proxy.
+- **Optional: flexdashboard gauge**  
+  If `flexdashboard` is installed, the app renders a relative risk gauge.
 
 ### 2) Ingestion
 

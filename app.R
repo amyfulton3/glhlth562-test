@@ -792,6 +792,25 @@ ui <- fluidPage(
           NULL
         ),
         tabPanel(
+          "Risk Gauge",
+          h3("Relative Risk Gauge"),
+          tags$p(
+            "Visual indicator of modeled relative risk based on Census + FEMA context.",
+            style = "color: var(--muted);"
+          ),
+          uiOutput("risk_gauge_ui"),
+          textOutput("risk_label")
+        ),
+        tabPanel(
+          "Benchmarking",
+          h3("Benchmarking"),
+          tags$p(
+            "Compare your selected geography with national averages and similarly populated states.",
+            style = "color: var(--muted);"
+          ),
+          tableOutput("benchmark_table")
+        ),
+        tabPanel(
           "Personnel",
           h3("Incident Type Odds by Personnel Type (Your Region)"),
           tags$p(
@@ -1103,9 +1122,33 @@ server <- function(input, output, session) {
     states
   })
 
+  geo_summary <- reactive({
+    data <- model_data()
+    if (is.null(data) || nrow(data) == 0) return(NULL)
+    states <- geo_states()
+    data_geo <- data %>% filter(state %in% states)
+    if (nrow(data_geo) == 0) return(NULL)
+
+    deaths <- sum(data_geo$deaths, na.rm = TRUE)
+    population <- sum(data_geo$population, na.rm = TRUE)
+    median_age <- weighted.mean(data_geo$median_age, w = data_geo$population, na.rm = TRUE)
+    median_income <- weighted.mean(data_geo$median_income, w = data_geo$population, na.rm = TRUE)
+    disaster_count <- sum(data_geo$disaster_count, na.rm = TRUE)
+
+    tibble(
+      deaths = deaths,
+      population = population,
+      median_age = median_age,
+      median_income = median_income,
+      disaster_count = disaster_count,
+      deaths_per_100k = ifelse(population > 0, (deaths / population) * 100000, NA_real_)
+    )
+  })
+
   output$risk_overview <- renderUI({
     data <- model_data()
-    if (is.null(data) || nrow(data) == 0) {
+    summary <- geo_summary()
+    if (is.null(data) || nrow(data) == 0 || is.null(summary)) {
       return(tags$div(
         class = "card",
         tags$div(class = "card-title", "Risk-Adjusted Metrics"),
@@ -1113,29 +1156,18 @@ server <- function(input, output, session) {
       ))
     }
 
-    states <- geo_states()
-    data_geo <- data %>% filter(state %in% states)
-    if (nrow(data_geo) == 0) return(NULL)
-
-    deaths <- sum(data_geo$deaths, na.rm = TRUE)
-    population <- sum(data_geo$population, na.rm = TRUE)
-    rate <- ifelse(population > 0, (deaths / population) * 100000, NA_real_)
+    rate <- summary$deaths_per_100k
     national_rate <- mean(data$deaths_per_100k, na.rm = TRUE)
     comparison <- ifelse(!is.na(rate) && !is.na(national_rate),
                          ifelse(rate >= national_rate, "above", "below"), "unknown")
-    disaster_total <- sum(data_geo$disaster_count, na.rm = TRUE)
+    disaster_total <- summary$disaster_count
 
     risk_text <- "Select a state to view modeled risk."
-    if (input$geo_mode == "state" && !is.null(input$state) && input$state != "All") {
-      fit <- model_fit()
-      if (!is.null(fit)) {
-        row <- data %>% filter(state == input$state) %>% slice(1)
-        if (nrow(row) == 1) {
-          pred <- predict(fit, newdata = row, type = "response")
-          risk_ratio <- pred / mean(data$deaths, na.rm = TRUE)
-          risk_text <- paste0("Modeled relative risk: ", round(risk_ratio, 2), " (associations, not causation).")
-        }
-      }
+    fit <- model_fit()
+    if (!is.null(fit)) {
+      pred <- predict(fit, newdata = summary, type = "response")
+      risk_ratio <- pred / mean(data$deaths, na.rm = TRUE)
+      risk_text <- paste0("Modeled relative risk: ", round(risk_ratio, 2), " (associations, not causation).")
     }
 
     tags$div(
@@ -1146,6 +1178,82 @@ server <- function(input, output, session) {
       tags$p(paste0("Total FEMA disaster declarations: ", ifelse(is.na(disaster_total), "NA", disaster_total))),
       tags$p(risk_text)
     )
+  })
+
+  risk_ratio_val <- reactive({
+    data <- model_data()
+    summary <- geo_summary()
+    fit <- model_fit()
+    if (is.null(data) || is.null(summary) || is.null(fit)) return(NA_real_)
+    pred <- predict(fit, newdata = summary, type = "response")
+    as.numeric(pred / mean(data$deaths, na.rm = TRUE))
+  })
+
+  output$risk_gauge_ui <- renderUI({
+    if (!requireNamespace("flexdashboard", quietly = TRUE)) {
+      return(tags$div("Install the flexdashboard package to view the gauge."))
+    }
+    flexdashboard::gaugeOutput("risk_gauge")
+  })
+
+  if (requireNamespace("flexdashboard", quietly = TRUE)) {
+    output$risk_gauge <- flexdashboard::renderGauge({
+      ratio <- risk_ratio_val()
+      if (is.na(ratio)) ratio <- 0
+      safe_risk <- min(max(ratio, 0), 2)
+      flexdashboard::gauge(
+        value = round(safe_risk, 2),
+        min = 0,
+        max = 2,
+        sectors = flexdashboard::gaugeSectors(
+          success = c(0, 0.8),
+          warning = c(0.8, 1.2),
+          danger = c(1.2, 2)
+        )
+      )
+    })
+  }
+
+  output$risk_label <- renderText({
+    ratio <- risk_ratio_val()
+    if (is.na(ratio)) return("Risk unavailable")
+    if (ratio < 0.8) {
+      "Lower-than-average risk"
+    } else if (ratio < 1.2) {
+      "Average risk"
+    } else {
+      "Elevated risk"
+    }
+  })
+
+  output$benchmark_table <- renderTable({
+    data <- model_data()
+    summary <- geo_summary()
+    if (is.null(data) || is.null(summary)) return(NULL)
+
+    national_rate <- mean(data$deaths_per_100k, na.rm = TRUE)
+    geo_rate <- summary$deaths_per_100k
+
+    table <- tibble(
+      Comparison = c("Selected geography", "National average"),
+      `Fatalities per 100k` = c(round(geo_rate, 2), round(national_rate, 2))
+    )
+
+    if (input$geo_mode == "state" && !is.null(input$state) && input$state != "All") {
+      target <- data %>% filter(state == input$state) %>% slice(1)
+      if (nrow(target) == 1) {
+        pop <- target$population
+        similar <- data %>%
+          filter(population >= pop * 0.8, population <= pop * 1.2) %>%
+          summarize(similar_rate = mean(deaths_per_100k, na.rm = TRUE))
+        table <- bind_rows(
+          table,
+          tibble(Comparison = "Similar population states", `Fatalities per 100k` = round(similar$similar_rate, 2))
+        )
+      }
+    }
+
+    table
   })
 
   output$last_refreshed <- renderText({
@@ -1859,28 +1967,13 @@ server <- function(input, output, session) {
       "Not provided"
     }
 
-    census_row <- NULL
-    disaster_count <- NA
-    fatality_rate <- NA
-    risk_ratio <- NA
-    median_age <- NA
-    median_income <- NA
-
+    summary <- geo_summary()
     data <- model_data()
-    if (!is.null(data) && input$geo_mode == "state" && !is.null(input$state) && input$state != "All") {
-      census_row <- data %>% filter(state == input$state) %>% slice(1)
-      if (nrow(census_row) == 1) {
-        fatality_rate <- census_row$deaths_per_100k
-        disaster_count <- census_row$disaster_count
-        median_age <- census_row$median_age
-        median_income <- census_row$median_income
-      }
-      fit <- model_fit()
-      if (!is.null(fit) && nrow(census_row) == 1) {
-        pred <- predict(fit, newdata = census_row, type = "response")
-        risk_ratio <- pred / mean(data$deaths, na.rm = TRUE)
-      }
-    }
+    risk_ratio <- risk_ratio_val()
+    fatality_rate <- ifelse(!is.null(summary), summary$deaths_per_100k, NA)
+    disaster_count <- ifelse(!is.null(summary), summary$disaster_count, NA)
+    median_age <- ifelse(!is.null(summary), summary$median_age, NA)
+    median_income <- ifelse(!is.null(summary), summary$median_income, NA)
 
     summary_text <- paste(
       "Region:", region_text,
