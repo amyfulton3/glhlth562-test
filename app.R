@@ -775,7 +775,7 @@ ui <- fluidPage(
       tags$p(class = "app-subtitle", "Explore how your department can minimize potential for firefighter fatalities."),
       tags$p(class = "app-subtitle", "Data auto refreshes daily"),
       tags$p(class = "app-subtitle", textOutput("last_refreshed")),
-      tags$p(class = "app-subtitle", textOutput("data_source")),
+      tags$p(class = "app-subtitle", "Data sources: USFA Fatalities, Census ACS, FEMA Disasters"),
       actionButton("refresh_data", "Refresh Data Now", class = "header-btn")
     )
   ),
@@ -1183,6 +1183,9 @@ server <- function(input, output, session) {
   observeEvent(input$refresh_data, {
     data_state(get_data(TRUE))
     last_refresh_state(read_last_refresh())
+    census_state(get_census_data())
+    fema_state(get_fema_data())
+    fema_types_state(get_fema_types())
   })
 
   observeEvent(data_state(), {
