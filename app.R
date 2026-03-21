@@ -1001,6 +1001,7 @@ ui <- fluidPage(
           ),
           tags$ul(
             style = "color: var(--muted); margin-top: -6px;",
+            tags$li("Department makeup, incident exposure level, and incident types (scenario adjustments)."),
             tags$li("Population density (urban vs. rural operational complexity)."),
             tags$li("Housing density (structure fire exposure)."),
             tags$li("Poverty rate (resource constraints and vulnerability)."),
