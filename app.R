@@ -1460,11 +1460,9 @@ server <- function(input, output, session) {
     disaster_total <- summary$disaster_count
 
     risk_text <- "Select a state to view modeled risk."
-    fit <- fatality_model_fit()
-    if (!is.null(fit)) {
-      pred <- predict(fit, newdata = summary, type = "response")
-      risk_ratio <- pred / mean(data$deaths, na.rm = TRUE)
-      risk_text <- paste0("Modeled relative risk: ", round(risk_ratio, 2), " (associations, not causation).")
+    ratio <- fatality_risk_ratio_val()
+    if (!is.na(ratio)) {
+      risk_text <- paste0("Modeled relative risk (scenario-adjusted): ", round(ratio, 2), " (associations, not causation).")
     }
 
     tags$div(
