@@ -781,7 +781,6 @@ ui <- fluidPage(
           "Regional Risks",
           h3("Fatality Risk Summary"),
           textOutput("risk_summary"),
-          uiOutput("risk_overview"),
           tableOutput("top_causes"),
           h3("Fatalities Over Time"),
           plotOutput("trend_plot", height = "250px"),
@@ -799,7 +798,8 @@ ui <- fluidPage(
             style = "color: var(--muted);"
           ),
           uiOutput("risk_gauge_ui"),
-          textOutput("risk_label")
+          textOutput("risk_label"),
+          uiOutput("risk_overview")
         ),
         tabPanel(
           "Benchmarking",
@@ -1191,7 +1191,7 @@ server <- function(input, output, session) {
 
   output$risk_gauge_ui <- renderUI({
     if (!requireNamespace("flexdashboard", quietly = TRUE)) {
-      return(tags$div("Install the flexdashboard package to view the gauge."))
+      return(plotOutput("risk_gauge_plot", height = "220px"))
     }
     flexdashboard::gaugeOutput("risk_gauge")
   })
@@ -1213,6 +1213,33 @@ server <- function(input, output, session) {
       )
     })
   }
+
+  output$risk_gauge_plot <- renderPlot({
+    ratio <- risk_ratio_val()
+    if (is.na(ratio)) ratio <- 0
+    safe_risk <- min(max(ratio, 0), 2)
+
+    bands <- tibble(
+      xmin = c(0, 0.8, 1.2),
+      xmax = c(0.8, 1.2, 2),
+      ymin = 0,
+      ymax = 1,
+      fill = c("Low", "Average", "High")
+    )
+
+    ggplot(bands) +
+      geom_rect(aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, fill = fill), color = NA, alpha = 0.8) +
+      geom_segment(aes(x = safe_risk, xend = safe_risk, y = 0, yend = 1), color = "#0b0b0c", linewidth = 1.2) +
+      geom_point(aes(x = safe_risk, y = 0.5), color = "#0b0b0c", size = 3) +
+      scale_fill_manual(values = c("Low" = "#4caf50", "Average" = "#f2c94c", "High" = "#d63230")) +
+      scale_x_continuous(limits = c(0, 2), breaks = c(0, 0.8, 1.2, 2)) +
+      theme_void() +
+      theme(
+        legend.position = "none",
+        plot.background = element_rect(fill = "transparent", color = NA),
+        panel.background = element_rect(fill = "transparent", color = NA)
+      )
+  })
 
   output$risk_label <- renderText({
     ratio <- risk_ratio_val()
