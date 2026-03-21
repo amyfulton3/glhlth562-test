@@ -1178,6 +1178,9 @@ server <- function(input, output, session) {
   observeEvent(refresh_timer(), {
     data_state(get_data(FALSE))
     last_refresh_state(read_last_refresh())
+    census_state(get_census_data())
+    fema_state(get_fema_data())
+    fema_types_state(get_fema_types())
   })
 
   observeEvent(input$refresh_data, {
