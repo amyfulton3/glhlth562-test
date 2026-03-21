@@ -748,6 +748,11 @@ ui <- fluidPage(
       .nav-tabs > li.active > a,
       .nav-tabs > li.active > a:hover,
       .nav-tabs > li.active > a:focus { color: var(--text); background: #1c1c1f; border-bottom-color: transparent; }
+      .tab-divider { pointer-events: none; }
+      .tab-divider > a { color: #ffb347 !important; background: transparent !important; border: none !important; text-transform: uppercase; letter-spacing: 1px; font-size: 11px; padding: 6px 8px; }
+      .tab-divider.disaster > a { color: #7dd3fc !important; }
+      .tab-fatality { color: #ffb347; }
+      .tab-disaster { color: #7dd3fc; }
       .global-spinner { display: none; position: fixed; top: 16px; right: 20px; width: 22px; height: 22px; border: 3px solid #2a2a2f; border-top-color: #ff6a00; border-radius: 50%; animation: spin 0.8s linear infinite; z-index: 9999; }
       .global-spinner.show { display: inline-block; }
       .btn-inline { display: inline-flex; align-items: center; gap: 8px; }
@@ -771,8 +776,8 @@ ui <- fluidPage(
       HTML("<svg viewBox='0 0 64 64' xmlns='http://www.w3.org/2000/svg'><path d='M8 36c0-14 11-26 24-26s24 12 24 26v10H8V36z' fill='#ff6a00'/><path d='M14 36c0-10 8-18 18-18s18 8 18 18v4H14v-4z' fill='#d63230'/><path d='M6 46h52v8H6z' fill='#ffb347'/><circle cx='32' cy='30' r='6' fill='#0b0b0c'/></svg>")
     ),
     tags$div(
-      tags$h1(class = "app-title", "Firefighter Fatality Risk Dashboard"),
-      tags$p(class = "app-subtitle", "Explore how your department can minimize potential for firefighter fatalities."),
+      tags$h1(class = "app-title", "Firefighter Fatality Management and Disaster Preparedness"),
+      tags$p(class = "app-subtitle", "Is your department ready for the unexpected? Explore how your department can minimize potential for firefighter fatalities and prepare to respond to large-scale disasters."),
       tags$p(class = "app-subtitle", "Data auto refreshes daily"),
       tags$p(class = "app-subtitle", textOutput("last_refreshed")),
       tags$p(class = "app-subtitle", "Data sources: USFA Fatalities, Census ACS, FEMA Disasters"),
@@ -849,8 +854,9 @@ ui <- fluidPage(
     mainPanel(
       class = "main",
       tabsetPanel(
+        tags$li(class = "tab-divider", tags$a("Fatality Risk & Minimization", href = "#")),
         tabPanel(
-          "Regional Risks",
+          title = tags$span("Regional Risks", class = "tab-fatality"),
           h3("Fatality Risk Summary"),
           textOutput("risk_summary"),
           tableOutput("top_causes"),
@@ -863,10 +869,10 @@ ui <- fluidPage(
           NULL
         ),
         tabPanel(
-          "Risk Gauge",
-          h3("Relative Risk Gauge"),
+          title = tags$span("Fatality Risk Gauge", class = "tab-fatality"),
+          h3("Fatality Risk Gauge"),
           tags$p(
-            "Visual indicator of modeled relative risk based on Census + FEMA context.",
+            "Visual indicator of modeled firefighter fatality risk based on Census + FEMA context.",
             style = "color: var(--muted);"
           ),
           tags$p(
@@ -877,45 +883,19 @@ ui <- fluidPage(
             style = "color: var(--muted); margin-top: -6px;",
             tags$li("Population density (urban vs. rural operational complexity)."),
             tags$li("Housing density (structure fire exposure)."),
-            tags$li("Percent elderly (cardiac and vulnerability risk)."),
             tags$li("Poverty rate (resource constraints and vulnerability)."),
-            tags$li("Households without vehicles (evacuation/rescue burden)."),
             tags$li("FEMA disaster count (operational surge exposure).")
+          ),
+          tags$p(
+            "The gauge reports a relative risk score (0–2) derived from a Poisson model of line-of-duty fatalities. Values below 1 indicate lower-than-average modeled risk; values above 1 indicate higher-than-average modeled risk.",
+            style = "color: var(--muted);"
           ),
           plotOutput("risk_gauge_plot", height = "220px"),
           textOutput("risk_label"),
           uiOutput("risk_overview")
         ),
         tabPanel(
-          "Benchmarking",
-          h3("Benchmarking"),
-          tags$p(
-            "Compare your selected geography with national averages and similarly populated states. Metrics use population density, housing density, percent elderly, poverty rate, no-vehicle rate, and FEMA disaster exposure.",
-            style = "color: var(--muted);"
-          ),
-          tableOutput("benchmark_table")
-        ),
-        tabPanel(
-          "Disaster Risk & Preparedness",
-          h3("Disaster Risk & Preparedness"),
-          tags$p(
-            "Estimate disaster exposure and generate preparedness guidance using Census + FEMA data.",
-            style = "color: var(--muted);"
-          ),
-          uiOutput("disaster_summary"),
-          h3("Top Disaster Types"),
-          tableOutput("disaster_types_table"),
-          h3("Preparedness Plan"),
-          tags$div(
-            class = "btn-inline",
-            actionButton("run_disaster_plan", "Generate Preparedness Plan"),
-            conditionalPanel("output.disaster_busy == true", tags$span(class = "inline-spinner"))
-          ),
-          textOutput("disaster_status"),
-          textOutput("disaster_plan")
-        ),
-        tabPanel(
-          "Personnel",
+          title = tags$span("Personnel", class = "tab-fatality"),
           h3("Incident Type Odds by Personnel Type (Your Region)"),
           tags$p(
             "Shows how incident types are over/under-represented in fatality records by personnel type in your selected region. Reference group: overall average. This is not a population risk estimate.",
@@ -936,7 +916,7 @@ ui <- fluidPage(
           plotOutput("activity_plot", height = "520px")
         ),
         tabPanel(
-          "Prevention Guidance",
+          title = tags$span("Prevention Guidance", class = "tab-fatality"),
           h3("Prevention Guidance"),
           tags$p(
             "Generate tailored prevention guidance based on your region, incident types, department makeup, and challenges.",
@@ -951,7 +931,7 @@ ui <- fluidPage(
           textOutput("guidance")
         ),
         tabPanel(
-          "Incident Reports",
+          title = tags$span("Incident Reports", class = "tab-fatality"),
           h3("Incident Report Analysis"),
           tags$p(
             "Paste multiple incident reports below. The LLM will summarize key fatality risks and recommendations using historical trends.",
@@ -973,7 +953,7 @@ ui <- fluidPage(
           uiOutput("reports_analysis")
         ),
         tabPanel(
-          "Training Plan",
+          title = tags$span("Training Plan", class = "tab-fatality"),
           h3("Monthly Training Plan"),
           tags$p(
             "Generates a 12-month training plan based on your department characteristics and historical fatality trends.",
@@ -1000,10 +980,60 @@ ui <- fluidPage(
           uiOutput("training_intro"),
           tableOutput("training_table"),
           textOutput("training_plan")
-        )
-        ,
+        ),
+        tags$li(class = "tab-divider disaster", tags$a("Disaster Preparedness", href = "#")),
         tabPanel(
-          "Individual Guidance",
+          title = tags$span("Disaster Risk Gauge", class = "tab-disaster"),
+          h3("Disaster Response Likelihood Gauge"),
+          tags$p(
+            "Visual indicator of modeled disaster response likelihood based on FEMA + Census indicators.",
+            style = "color: var(--muted);"
+          ),
+          tags$ul(
+            style = "color: var(--muted); margin-top: -6px;",
+            tags$li("FEMA disaster declarations per 100k (exposure)."),
+            tags$li("Population density (response complexity)."),
+            tags$li("Percent elderly (vulnerability)."),
+            tags$li("Households without vehicles (evacuation burden)."),
+            tags$li("Poverty rate (resource constraints).")
+          ),
+          tags$p(
+            "This gauge summarizes a composite disaster-response likelihood score (0–2) using standardized Census + FEMA indicators. It reflects relative operational exposure, not certainty of future events.",
+            style = "color: var(--muted);"
+          ),
+          plotOutput("disaster_gauge_plot", height = "220px"),
+          textOutput("disaster_risk_label")
+        ),
+        tabPanel(
+          title = tags$span("Benchmarking", class = "tab-disaster"),
+          h3("Benchmarking"),
+          tags$p(
+            "Compare your selected geography with national averages and similarly populated states. Metrics use population density, housing density, percent elderly, poverty rate, no-vehicle rate, and FEMA disaster exposure.",
+            style = "color: var(--muted);"
+          ),
+          tableOutput("benchmark_table")
+        ),
+        tabPanel(
+          title = tags$span("Disaster Risk & Preparedness", class = "tab-disaster"),
+          h3("Disaster Risk & Preparedness"),
+          tags$p(
+            "Estimate disaster exposure and generate preparedness guidance using Census + FEMA data.",
+            style = "color: var(--muted);"
+          ),
+          uiOutput("disaster_summary"),
+          h3("Top Disaster Types"),
+          tableOutput("disaster_types_table"),
+          h3("Preparedness Plan"),
+          tags$div(
+            class = "btn-inline",
+            actionButton("run_disaster_plan", "Generate Preparedness Plan"),
+            conditionalPanel("output.disaster_busy == true", tags$span(class = "inline-spinner"))
+          ),
+          textOutput("disaster_status"),
+          textOutput("disaster_plan")
+        ),
+        tabPanel(
+          title = tags$span("Individual Guidance", class = "tab-disaster"),
           h3("Individualized Risk Profile"),
           tags$p(
             "Explore historical fatality patterns for firefighters who match your profile.",
@@ -1205,16 +1235,16 @@ server <- function(input, output, session) {
     else "Data source: bundled sample data"
   })
 
-  model_fit <- reactive({
+  fatality_model_fit <- reactive({
     data <- model_data()
     if (is.null(data)) return(NULL)
     data <- data %>%
-      filter(!is.na(population), population > 0, !is.na(pct_elderly), !is.na(poverty_rate), !is.na(log_density), !is.na(no_vehicle_rate), !is.na(log_housing_density))
+      filter(!is.na(population), population > 0, !is.na(poverty_rate), !is.na(log_density), !is.na(log_housing_density))
     if (nrow(data) < 5) return(NULL)
 
     tryCatch(
       glm(
-        deaths ~ log_density + log_housing_density + pct_elderly + poverty_rate + no_vehicle_rate + disaster_count,
+        deaths ~ log_density + log_housing_density + poverty_rate + disaster_count,
         family = "poisson",
         offset = log(population),
         data = data
@@ -1297,7 +1327,7 @@ server <- function(input, output, session) {
     disaster_total <- summary$disaster_count
 
     risk_text <- "Select a state to view modeled risk."
-    fit <- model_fit()
+    fit <- fatality_model_fit()
     if (!is.null(fit)) {
       pred <- predict(fit, newdata = summary, type = "response")
       risk_ratio <- pred / mean(data$deaths, na.rm = TRUE)
@@ -1314,17 +1344,17 @@ server <- function(input, output, session) {
     )
   })
 
-  risk_ratio_val <- reactive({
+  fatality_risk_ratio_val <- reactive({
     data <- model_data()
     summary <- geo_summary()
-    fit <- model_fit()
+    fit <- fatality_model_fit()
     if (is.null(data) || is.null(summary) || is.null(fit)) return(NA_real_)
     pred <- predict(fit, newdata = summary, type = "response")
     as.numeric(pred / mean(data$deaths, na.rm = TRUE))
   })
 
   output$risk_gauge_plot <- renderPlot({
-    ratio <- risk_ratio_val()
+    ratio <- fatality_risk_ratio_val()
     if (is.na(ratio)) ratio <- 0
     safe_risk <- min(max(ratio, 0), 2)
 
@@ -1351,7 +1381,7 @@ server <- function(input, output, session) {
   })
 
   output$risk_label <- renderText({
-    ratio <- risk_ratio_val()
+    ratio <- fatality_risk_ratio_val()
     if (is.na(ratio)) return("Risk unavailable")
     if (ratio < 0.8) {
       "Lower-than-average risk"
@@ -1359,6 +1389,108 @@ server <- function(input, output, session) {
       "Average risk"
     } else {
       "Elevated risk"
+    }
+  })
+
+  disaster_index_stats <- reactive({
+    data <- model_data()
+    if (is.null(data)) return(NULL)
+
+    data <- data %>%
+      mutate(
+        disasters_per_100k = ifelse(population > 0, (disaster_count / population) * 100000, NA_real_)
+      )
+
+    vars <- list(
+      log_density = data$log_density,
+      pct_elderly = data$pct_elderly,
+      no_vehicle_rate = data$no_vehicle_rate,
+      poverty_rate = data$poverty_rate,
+      disasters_per_100k = data$disasters_per_100k
+    )
+
+    means <- lapply(vars, function(x) mean(x, na.rm = TRUE))
+    sds <- lapply(vars, function(x) sd(x, na.rm = TRUE))
+
+    z_scores <- lapply(names(vars), function(nm) {
+      x <- vars[[nm]]
+      mu <- means[[nm]]
+      s <- sds[[nm]]
+      if (is.na(s) || s == 0) return(rep(0, length(x)))
+      (x - mu) / s
+    })
+
+    index <- rowMeans(as.data.frame(z_scores), na.rm = TRUE)
+    list(
+      means = means,
+      sds = sds,
+      min_index = min(index, na.rm = TRUE),
+      max_index = max(index, na.rm = TRUE)
+    )
+  })
+
+  disaster_risk_score_val <- reactive({
+    stats <- disaster_index_stats()
+    summary <- geo_summary()
+    if (is.null(stats) || is.null(summary)) return(NA_real_)
+
+    disasters_per_100k <- ifelse(summary$population > 0, (summary$disaster_count / summary$population) * 100000, NA_real_)
+
+    calc_z <- function(value, mu, s) {
+      if (is.na(value) || is.na(s) || s == 0) return(0)
+      (value - mu) / s
+    }
+
+    z_density <- calc_z(summary$log_density, stats$means$log_density, stats$sds$log_density)
+    z_elderly <- calc_z(summary$pct_elderly, stats$means$pct_elderly, stats$sds$pct_elderly)
+    z_vehicle <- calc_z(summary$no_vehicle_rate, stats$means$no_vehicle_rate, stats$sds$no_vehicle_rate)
+    z_poverty <- calc_z(summary$poverty_rate, stats$means$poverty_rate, stats$sds$poverty_rate)
+    z_disasters <- calc_z(disasters_per_100k, stats$means$disasters_per_100k, stats$sds$disasters_per_100k)
+
+    index <- mean(c(z_density, z_elderly, z_vehicle, z_poverty, z_disasters), na.rm = TRUE)
+    if (is.na(index) || is.na(stats$min_index) || is.na(stats$max_index) || stats$max_index == stats$min_index) {
+      return(NA_real_)
+    }
+    scaled <- (index - stats$min_index) / (stats$max_index - stats$min_index) * 2
+    min(max(scaled, 0), 2)
+  })
+
+  output$disaster_gauge_plot <- renderPlot({
+    score <- disaster_risk_score_val()
+    if (is.na(score)) score <- 0
+    safe_risk <- min(max(score, 0), 2)
+
+    bands <- tibble(
+      xmin = c(0, 0.8, 1.2),
+      xmax = c(0.8, 1.2, 2),
+      ymin = 0,
+      ymax = 1,
+      fill = c("Low", "Average", "High")
+    )
+
+    ggplot(bands) +
+      geom_rect(aes(xmin = xmin, xmax = xmax, ymin = ymin, ymax = ymax, fill = fill), color = NA, alpha = 0.8) +
+      geom_segment(aes(x = safe_risk, xend = safe_risk, y = 0, yend = 1), color = "#0b0b0c", linewidth = 1.2) +
+      geom_point(aes(x = safe_risk, y = 0.5), color = "#0b0b0c", size = 3) +
+      scale_fill_manual(values = c("Low" = "#4caf50", "Average" = "#f2c94c", "High" = "#d63230")) +
+      scale_x_continuous(limits = c(0, 2), breaks = c(0, 0.8, 1.2, 2)) +
+      theme_void() +
+      theme(
+        legend.position = "none",
+        plot.background = element_rect(fill = "transparent", color = NA),
+        panel.background = element_rect(fill = "transparent", color = NA)
+      )
+  })
+
+  output$disaster_risk_label <- renderText({
+    score <- disaster_risk_score_val()
+    if (is.na(score)) return("Risk unavailable")
+    if (score < 0.8) {
+      "Lower-than-average disaster response likelihood"
+    } else if (score < 1.2) {
+      "Average disaster response likelihood"
+    } else {
+      "Elevated disaster response likelihood"
     }
   })
 
@@ -2182,7 +2314,7 @@ server <- function(input, output, session) {
 
     summary <- geo_summary()
     data <- model_data()
-    risk_ratio <- risk_ratio_val()
+    risk_ratio <- fatality_risk_ratio_val()
     fatality_rate <- ifelse(!is.null(summary), summary$deaths_per_100k, NA)
     disaster_count <- ifelse(!is.null(summary), summary$disaster_count, NA)
     median_age <- ifelse(!is.null(summary), summary$median_age, NA)
