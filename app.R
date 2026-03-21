@@ -860,7 +860,7 @@ ui <- fluidPage(
       .card { background: #141417; border: 1px solid #2a2a2f; border-radius: 12px; padding: 12px 14px; margin: 10px 0; box-shadow: 0 6px 16px rgba(0,0,0,0.25); }
       .card-title { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.5px; color: #ffb347; margin-bottom: 6px; }
       .card ul { margin: 0 0 0 16px; }
-      .nav-tabs { border-bottom: 1px solid #2a2a2f; display: flex; flex-wrap: nowrap; gap: 6px; overflow-x: auto; white-space: nowrap; }
+      .nav-tabs { border-bottom: 1px solid #2a2a2f; display: flex; flex-wrap: wrap; gap: 6px; }
       .nav-tabs > li { float: none; }
       .nav-tabs > li > a { font-size: 13px; padding: 8px 10px; }
       .nav-tabs > li > a { color: var(--muted); background: #111114; border: 1px solid #2a2a2f; margin-right: 6px; border-radius: 8px 8px 0 0; }
@@ -870,9 +870,10 @@ ui <- fluidPage(
       .nav-tabs > li.active > a:focus { color: var(--text); background: #1c1c1f; border-bottom-color: transparent; }
       .tab-divider { pointer-events: none; }
       .tab-divider > a { color: #ffb347 !important; background: transparent !important; border: none !important; text-transform: uppercase; letter-spacing: 1px; font-size: 11px; padding: 6px 8px; }
-      .tab-divider.disaster > a { color: #ffb347 !important; }
+      .tab-divider.disaster > a { color: #e18a0a !important; }
       .tab-fatality { color: #ffb347; }
-      .tab-disaster { color: #ffb347; }
+      .tab-disaster { color: #e18a0a; }
+      .tab-divider.disaster { flex-basis: 100%; margin-top: 8px; }
       .global-spinner { display: none; position: fixed; top: 16px; right: 20px; width: 22px; height: 22px; border: 3px solid #2a2a2f; border-top-color: #ff6a00; border-radius: 50%; animation: spin 0.8s linear infinite; z-index: 9999; }
       .global-spinner.show { display: inline-block; }
       .btn-inline { display: inline-flex; align-items: center; gap: 8px; }
@@ -995,7 +996,7 @@ ui <- fluidPage(
             style = "color: var(--muted);"
           ),
           tags$p(
-            "This gauge summarizes modeled relative risk (associations, not causation).",
+            "This gauge summarizes modeled relative risk (associations, not causation) and applies scenario adjustments for department makeup, incident exposure level, and incident types.",
             style = "color: var(--muted);"
           ),
           tags$ul(
@@ -1481,7 +1482,32 @@ server <- function(input, output, session) {
     fit <- fatality_model_fit()
     if (is.null(data) || is.null(summary) || is.null(fit)) return(NA_real_)
     pred <- predict(fit, newdata = summary, type = "response")
-    as.numeric(pred / mean(data$deaths, na.rm = TRUE))
+    base <- as.numeric(pred / mean(data$deaths, na.rm = TRUE))
+
+    exposure_adj <- switch(
+      input$incident_exposure,
+      "Low" = 0.9,
+      "High" = 1.1,
+      1.0
+    )
+
+    dept_adj <- 1.0
+    if (!is.null(input$dept_type) && length(input$dept_type) > 0) {
+      if ("Volunteer" %in% input$dept_type) dept_adj <- dept_adj + 0.05
+      if ("Wildland Contract" %in% input$dept_type || "Wildland Full-Time" %in% input$dept_type || "Wildland Part-Time" %in% input$dept_type) {
+        dept_adj <- dept_adj + 0.05
+      }
+    }
+
+    incident_adj <- 1.0
+    if (!is.null(input$incident_types) && length(input$incident_types) > 0) {
+      if ("Wildland" %in% input$incident_types) incident_adj <- incident_adj + 0.05
+      if ("Hazmat" %in% input$incident_types) incident_adj <- incident_adj + 0.03
+      if ("Vehicle Incident" %in% input$incident_types) incident_adj <- incident_adj + 0.03
+      if ("Rescue" %in% input$incident_types) incident_adj <- incident_adj + 0.02
+    }
+
+    as.numeric(base * exposure_adj * dept_adj * incident_adj)
   })
 
   output$risk_gauge_plot <- renderPlot({
