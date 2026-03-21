@@ -1002,6 +1002,7 @@ ui <- fluidPage(
           tags$ul(
             style = "color: var(--muted); margin-top: -6px;",
             tags$li("Department makeup, incident exposure level, and incident types (scenario adjustments)."),
+            tags$li("State/region baseline adjustment using observed fatality rate vs national average."),
             tags$li("Population density (urban vs. rural operational complexity)."),
             tags$li("Housing density (structure fire exposure)."),
             tags$li("FEMA disaster count (operational surge exposure).")
@@ -1482,6 +1483,11 @@ server <- function(input, output, session) {
     pred <- predict(fit, newdata = summary, type = "response")
     base <- as.numeric(pred / mean(data$deaths, na.rm = TRUE))
 
+    national_rate <- mean(data$deaths_per_100k, na.rm = TRUE)
+    geo_rate <- summary$deaths_per_100k
+    geo_adjust <- ifelse(!is.na(geo_rate) && !is.na(national_rate) && national_rate > 0,
+                         geo_rate / national_rate, 1)
+
     exposure_adj <- switch(
       input$incident_exposure,
       "Low" = 0.9,
@@ -1505,7 +1511,7 @@ server <- function(input, output, session) {
       if ("Rescue" %in% input$incident_types) incident_adj <- incident_adj + 0.02
     }
 
-    as.numeric(base * exposure_adj * dept_adj * incident_adj)
+    as.numeric(base * geo_adjust * exposure_adj * dept_adj * incident_adj)
   })
 
   output$risk_gauge_plot <- renderPlot({
