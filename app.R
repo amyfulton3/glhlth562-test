@@ -307,6 +307,23 @@ generate_profile_summary <- function(profile_text, reports_text, model = default
   call_gemini(input_text, instructions, model = model)
 }
 
+# ---- LLM: disaster preparedness ----
+generate_disaster_plan <- function(summary_text, model = default_model) {
+  instructions <- paste(
+    "You are a fire service disaster preparedness expert.",
+    "Focus on operational readiness, be practical and specific.",
+    "Do not overstate certainty.",
+    "Consider how population density affects response complexity.",
+    "Return sections:",
+    "Risk Overview (2-3 sentences)",
+    "Preparedness Priorities (bullet points)",
+    "Training Needs (bullet points)",
+    "Equipment and Resource Planning (bullet points)",
+    "Mutual Aid and Surge Capacity Considerations (bullet points)",
+    "Keep under 250 words."
+  )
+  call_gemini(summary_text, instructions, model = model)
+}
 # ---- Census + FEMA data ----
 get_census_data <- function(year = census_year) {
   key <- Sys.getenv("CENSUS_API_KEY")
@@ -367,6 +384,36 @@ get_fema_data <- function(max_pages = 5, page_size = 5000) {
     mutate(state = toupper(state)) %>%
     group_by(state) %>%
     summarize(disaster_count = n(), .groups = "drop")
+}
+
+get_fema_types <- function(max_pages = 5, page_size = 5000) {
+  base <- "https://www.fema.gov/api/open/v2/DisasterDeclarationsSummaries"
+  all_rows <- list()
+
+  for (i in seq_len(max_pages)) {
+    skip <- (i - 1) * page_size
+    url <- paste0(
+      base,
+      "?$select=state,incidentType",
+      "&$top=", page_size,
+      "&$skip=", skip
+    )
+    resp <- tryCatch(httr::GET(url), error = function(e) NULL)
+    if (is.null(resp) || httr::status_code(resp) >= 400) break
+
+    raw <- tryCatch(jsonlite::fromJSON(httr::content(resp, as = "text", encoding = "UTF-8")), error = function(e) NULL)
+    if (is.null(raw$DisasterDeclarationsSummaries) || nrow(raw$DisasterDeclarationsSummaries) == 0) break
+    all_rows[[length(all_rows) + 1]] <- raw$DisasterDeclarationsSummaries
+
+    if (nrow(raw$DisasterDeclarationsSummaries) < page_size) break
+  }
+
+  if (length(all_rows) == 0) return(NULL)
+
+  bind_rows(all_rows) %>%
+    mutate(state = toupper(state)) %>%
+    filter(!is.na(incidentType), incidentType != "") %>%
+    count(state, incidentType, name = "count")
 }
 
 # ---- Formatting: incident analysis ----
@@ -797,7 +844,7 @@ ui <- fluidPage(
             "Visual indicator of modeled relative risk based on Census + FEMA context.",
             style = "color: var(--muted);"
           ),
-          uiOutput("risk_gauge_ui"),
+          plotOutput("risk_gauge_plot", height = "220px"),
           textOutput("risk_label"),
           uiOutput("risk_overview")
         ),
@@ -809,6 +856,25 @@ ui <- fluidPage(
             style = "color: var(--muted);"
           ),
           tableOutput("benchmark_table")
+        ),
+        tabPanel(
+          "Disaster Risk & Preparedness",
+          h3("Disaster Risk & Preparedness"),
+          tags$p(
+            "Estimate disaster exposure and generate preparedness guidance using Census + FEMA data.",
+            style = "color: var(--muted);"
+          ),
+          uiOutput("disaster_summary"),
+          h3("Top Disaster Types"),
+          tableOutput("disaster_types_table"),
+          h3("Preparedness Plan"),
+          tags$div(
+            class = "btn-inline",
+            actionButton("run_disaster_plan", "Generate Preparedness Plan"),
+            conditionalPanel("output.disaster_busy == true", tags$span(class = "inline-spinner"))
+          ),
+          textOutput("disaster_status"),
+          textOutput("disaster_plan")
         ),
         tabPanel(
           "Personnel",
@@ -948,14 +1014,17 @@ server <- function(input, output, session) {
   last_refresh_state <- reactiveVal(read_last_refresh())
   census_state <- reactiveVal(get_census_data())
   fema_state <- reactiveVal(get_fema_data())
+  fema_types_state <- reactiveVal(get_fema_types())
   llm_state <- reactiveVal(list(status = "LLM guidance not generated yet.", guidance = NULL))
   reports_state <- reactiveVal(list(status = "No reports analyzed yet.", analysis = NULL))
   training_state <- reactiveVal(list(status = "No training plan generated yet.", plan = NULL))
   profile_state <- reactiveVal(list(status = "No profile summary generated yet.", analysis = NULL))
+  disaster_state <- reactiveVal(list(status = "No disaster plan generated yet.", plan = NULL))
   guidance_busy <- reactiveVal(FALSE)
   reports_busy <- reactiveVal(FALSE)
   training_busy <- reactiveVal(FALSE)
   profile_busy <- reactiveVal(FALSE)
+  disaster_busy <- reactiveVal(FALSE)
 
   observeEvent(data_state(), {
     df <- data_state()
@@ -1021,6 +1090,11 @@ server <- function(input, output, session) {
 
     combined %>%
       mutate(
+        land_area_sq_mi = state.area[match(state, state.abb)],
+        pop_density = ifelse(!is.na(land_area_sq_mi) & land_area_sq_mi > 0, population / land_area_sq_mi, NA_real_),
+        log_density = log(pop_density + 1)
+      ) %>%
+      mutate(
         deaths_per_100k = (deaths / population) * 100000
       )
   })
@@ -1074,6 +1148,7 @@ server <- function(input, output, session) {
   observeEvent(data_state(), {
     if (is.null(census_state())) census_state(get_census_data())
     if (is.null(fema_state())) fema_state(get_fema_data())
+    if (is.null(fema_types_state())) fema_types_state(get_fema_types())
   })
 
   output$data_source <- renderText({
@@ -1093,7 +1168,7 @@ server <- function(input, output, session) {
 
     tryCatch(
       glm(
-        deaths ~ median_age + median_income + disaster_count,
+        deaths ~ median_age + median_income + log_density + disaster_count,
         family = "poisson",
         offset = log(population),
         data = data
@@ -1134,6 +1209,8 @@ server <- function(input, output, session) {
     median_age <- weighted.mean(data_geo$median_age, w = data_geo$population, na.rm = TRUE)
     median_income <- weighted.mean(data_geo$median_income, w = data_geo$population, na.rm = TRUE)
     disaster_count <- sum(data_geo$disaster_count, na.rm = TRUE)
+    land_area <- sum(data_geo$land_area_sq_mi, na.rm = TRUE)
+    pop_density <- ifelse(land_area > 0, population / land_area, NA_real_)
 
     tibble(
       deaths = deaths,
@@ -1141,6 +1218,9 @@ server <- function(input, output, session) {
       median_age = median_age,
       median_income = median_income,
       disaster_count = disaster_count,
+      land_area_sq_mi = land_area,
+      pop_density = pop_density,
+      log_density = log(pop_density + 1),
       deaths_per_100k = ifelse(population > 0, (deaths / population) * 100000, NA_real_)
     )
   })
@@ -1189,31 +1269,6 @@ server <- function(input, output, session) {
     as.numeric(pred / mean(data$deaths, na.rm = TRUE))
   })
 
-  output$risk_gauge_ui <- renderUI({
-    if (!requireNamespace("flexdashboard", quietly = TRUE)) {
-      return(plotOutput("risk_gauge_plot", height = "220px"))
-    }
-    flexdashboard::gaugeOutput("risk_gauge")
-  })
-
-  if (requireNamespace("flexdashboard", quietly = TRUE)) {
-    output$risk_gauge <- flexdashboard::renderGauge({
-      ratio <- risk_ratio_val()
-      if (is.na(ratio)) ratio <- 0
-      safe_risk <- min(max(ratio, 0), 2)
-      flexdashboard::gauge(
-        value = round(safe_risk, 2),
-        min = 0,
-        max = 2,
-        sectors = flexdashboard::gaugeSectors(
-          success = c(0, 0.8),
-          warning = c(0.8, 1.2),
-          danger = c(1.2, 2)
-        )
-      )
-    })
-  }
-
   output$risk_gauge_plot <- renderPlot({
     ratio <- risk_ratio_val()
     if (is.na(ratio)) ratio <- 0
@@ -1251,6 +1306,81 @@ server <- function(input, output, session) {
     } else {
       "Elevated risk"
     }
+  })
+
+  disaster_summary_data <- reactive({
+    summary <- geo_summary()
+    data <- model_data()
+    if (is.null(summary) || is.null(data)) return(NULL)
+
+    disasters_per_100k <- ifelse(summary$population > 0,
+                                 (summary$disaster_count / summary$population) * 100000,
+                                 NA_real_)
+    max_disasters <- max(data$disaster_count, na.rm = TRUE)
+    population_at_risk <- ifelse(is.finite(max_disasters) && max_disasters > 0,
+                                 summary$population * (summary$disaster_count / max_disasters),
+                                 NA_real_)
+
+    density_label <- case_when(
+      is.na(summary$pop_density) ~ "Unknown density",
+      summary$pop_density < 50 ~ "Low density (rural)",
+      summary$pop_density < 300 ~ "Moderate density",
+      TRUE ~ "High density (urban)"
+    )
+
+    list(
+      disasters_per_100k = disasters_per_100k,
+      population_at_risk = population_at_risk,
+      density = summary$pop_density,
+      density_label = density_label,
+      population = summary$population,
+      disaster_count = summary$disaster_count
+    )
+  })
+
+  output$disaster_summary <- renderUI({
+    info <- disaster_summary_data()
+    if (is.null(info)) {
+      return(tags$div(
+        class = "card",
+        tags$div(class = "card-title", "Disaster Risk Summary"),
+        tags$p("Census or FEMA data unavailable. Set CENSUS_API_KEY to enable this summary.")
+      ))
+    }
+
+    tags$div(
+      class = "card",
+      tags$div(class = "card-title", "Disaster Risk Summary"),
+      tags$p(paste0("Population: ", format(round(info$population), big.mark = ","))),
+      tags$p(paste0("Disaster declarations: ", info$disaster_count)),
+      tags$p(paste0("Disasters per 100k: ", round(info$disasters_per_100k, 2))),
+      tags$p(paste0("Estimated population at risk: ", format(round(info$population_at_risk), big.mark = ","))),
+      tags$p(paste0("Population density: ", ifelse(is.na(info$density), "NA", round(info$density, 1)), " per sq. mile (", info$density_label, ")"))
+    )
+  })
+
+  output$disaster_types_table <- renderTable({
+    types <- fema_types_state()
+    states <- geo_states()
+    if (is.null(types) || length(states) == 0) return(NULL)
+
+    types %>%
+      filter(state %in% states) %>%
+      group_by(state, incidentType) %>%
+      summarize(count = sum(count), .groups = "drop") %>%
+      group_by(state) %>%
+      slice_max(order_by = count, n = 3, with_ties = FALSE) %>%
+      ungroup() %>%
+      arrange(desc(count)) %>%
+      rename(`Disaster Type` = incidentType, `Count` = count)
+  })
+
+  output$disaster_status <- renderText({
+    disaster_state()$status
+  })
+
+  output$disaster_plan <- renderText({
+    disaster_state()$plan
   })
 
   output$benchmark_table <- renderTable({
@@ -1844,10 +1974,12 @@ server <- function(input, output, session) {
   output$reports_busy <- reactive({ reports_busy() })
   output$training_busy <- reactive({ training_busy() })
   output$profile_busy <- reactive({ profile_busy() })
+  output$disaster_busy <- reactive({ disaster_busy() })
   outputOptions(output, "guidance_busy", suspendWhenHidden = FALSE)
   outputOptions(output, "reports_busy", suspendWhenHidden = FALSE)
   outputOptions(output, "training_busy", suspendWhenHidden = FALSE)
   outputOptions(output, "profile_busy", suspendWhenHidden = FALSE)
+  outputOptions(output, "disaster_busy", suspendWhenHidden = FALSE)
 
   observeEvent(input$generate_training, {
     training_busy(TRUE)
@@ -2035,6 +2167,59 @@ server <- function(input, output, session) {
       llm_state(list(status = status_msg, guidance = NULL))
     } else {
       llm_state(list(status = "LLM guidance generated.", guidance = guidance))
+    }
+  })
+
+  observeEvent(input$run_disaster_plan, {
+    disaster_busy(TRUE)
+    on.exit(disaster_busy(FALSE), add = TRUE)
+
+    key <- Sys.getenv("GEMINI_API_KEY")
+    if (key == "") {
+      disaster_state(list(status = "Missing GEMINI_API_KEY. Set it in .Renviron or your session.", plan = NULL))
+      return()
+    }
+
+    summary <- geo_summary()
+    info <- disaster_summary_data()
+    if (is.null(summary) || is.null(info)) {
+      disaster_state(list(status = "Disaster data unavailable.", plan = NULL))
+      return()
+    }
+
+    types <- fema_types_state()
+    states <- geo_states()
+    top_types <- if (!is.null(types)) {
+      types %>%
+        filter(state %in% states) %>%
+        group_by(incidentType) %>%
+        summarize(count = sum(count), .groups = "drop") %>%
+        slice_max(order_by = count, n = 3, with_ties = FALSE) %>%
+        pull(incidentType)
+    } else {
+      character()
+    }
+
+    summary_text <- paste(
+      "Region:", ifelse(input$geo_mode == "state", input$state, input$region),
+      "Population:", round(info$population),
+      "Estimated population at risk:", round(info$population_at_risk),
+      "Disaster frequency per 100k:", round(info$disasters_per_100k, 2),
+      "Population density per sq mile:", round(info$density, 1),
+      "Top disaster types:", paste(top_types, collapse = ", "),
+      "Percent volunteer:", input$percent_volunteer,
+      "Incident exposure level:", input$incident_exposure
+    )
+
+    plan <- tryCatch(
+      generate_disaster_plan(summary_text),
+      error = function(e) NULL
+    )
+
+    if (is.null(plan)) {
+      disaster_state(list(status = "Preparedness plan generation failed. Try again.", plan = NULL))
+    } else {
+      disaster_state(list(status = "Preparedness plan generated.", plan = plan))
     }
   })
 }

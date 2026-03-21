@@ -21,8 +21,6 @@ This is a **data product** (not a static report). It accepts user input about re
   Population, median age, and median household income for risk normalization.
 - **FEMA Disaster Declarations Summaries API**  
   Disaster counts by state as an operational exposure proxy.
-- **Optional: flexdashboard gauge**  
-  If `flexdashboard` is installed, the app renders a relative risk gauge.
 
 ### 2) Ingestion
 
@@ -46,6 +44,8 @@ This is a **data product** (not a static report). It accepts user input about re
 
 - **Interactive Shiny dashboard** with multiple tabs:
   - Regional risk summaries + visuals
+  - Risk gauge + benchmarking
+  - Disaster risk & preparedness (Census + FEMA + LLM)
   - Personnel risk visualization
   - Incident report analysis (LLM)
   - Monthly training plan (LLM + equipment constraints)
