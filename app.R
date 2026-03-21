@@ -246,6 +246,7 @@ generate_llm_guidance <- function(summary_text, model = default_model) {
     "Interpret results as associations, not causation.",
     "Be practical, concise, and professional.",
     "Consider how disaster frequency may influence firefighter operational risk.",
+    "Consider demographic vulnerability such as age structure and poverty.",
     "Return structured output with these sections:",
     "Risk Overview (2-3 sentences)",
     "Training Recommendations (bullet points)",
@@ -329,10 +330,18 @@ get_census_data <- function(year = census_year) {
   key <- Sys.getenv("CENSUS_API_KEY")
   if (key == "") return(NULL)
 
+  elderly_vars <- c(
+    "B01001_020E","B01001_021E","B01001_022E","B01001_023E","B01001_024E","B01001_025E",
+    "B01001_044E","B01001_045E","B01001_046E","B01001_047E","B01001_048E","B01001_049E"
+  )
+  poverty_vars <- c("B17001_001E","B17001_002E")
+
   url <- paste0(
     "https://api.census.gov/data/",
     year,
-    "/acs/acs5?get=NAME,B01003_001E,B01002_001E,B19013_001E&for=state:*&key=",
+    "/acs/acs5?get=NAME,B01003_001E,B01002_001E,B19013_001E,",
+    paste(c(elderly_vars, poverty_vars), collapse = ","),
+    "&for=state:*&key=",
     key
   )
 
@@ -346,13 +355,22 @@ get_census_data <- function(year = census_year) {
   names(df) <- df[1, ]
   df <- df[-1, ]
 
-  df %>%
+  df <- df %>%
     transmute(
       NAME,
       population = as.numeric(B01003_001E),
       median_age = as.numeric(B01002_001E),
       median_income = as.numeric(B19013_001E),
+      elderly_pop = rowSums(across(all_of(elderly_vars), as.numeric), na.rm = TRUE),
+      poverty_total = as.numeric(B17001_001E),
+      poverty_below = as.numeric(B17001_002E),
       state = state.abb[match(NAME, state.name)]
+    )
+
+  df %>%
+    mutate(
+      pct_elderly = ifelse(population > 0, elderly_pop / population, NA_real_),
+      poverty_rate = ifelse(poverty_total > 0, poverty_below / poverty_total, NA_real_)
     )
 }
 
@@ -844,6 +862,10 @@ ui <- fluidPage(
             "Visual indicator of modeled relative risk based on Census + FEMA context.",
             style = "color: var(--muted);"
           ),
+          tags$p(
+            "This gauge summarizes modeled relative risk (associations, not causation) using population density, percent elderly, poverty rate, and disaster exposure.",
+            style = "color: var(--muted);"
+          ),
           plotOutput("risk_gauge_plot", height = "220px"),
           textOutput("risk_label"),
           uiOutput("risk_overview")
@@ -852,7 +874,7 @@ ui <- fluidPage(
           "Benchmarking",
           h3("Benchmarking"),
           tags$p(
-            "Compare your selected geography with national averages and similarly populated states.",
+            "Compare your selected geography with national averages and similarly populated states. Metrics are modeled using population density, percent elderly, poverty rate, and disaster exposure.",
             style = "color: var(--muted);"
           ),
           tableOutput("benchmark_table")
@@ -1163,12 +1185,12 @@ server <- function(input, output, session) {
     data <- model_data()
     if (is.null(data)) return(NULL)
     data <- data %>%
-      filter(!is.na(population), population > 0, !is.na(median_age), !is.na(median_income))
+      filter(!is.na(population), population > 0, !is.na(pct_elderly), !is.na(poverty_rate), !is.na(log_density))
     if (nrow(data) < 5) return(NULL)
 
     tryCatch(
       glm(
-        deaths ~ median_age + median_income + log_density + disaster_count,
+        deaths ~ log_density + pct_elderly + poverty_rate + disaster_count,
         family = "poisson",
         offset = log(population),
         data = data
@@ -1208,6 +1230,8 @@ server <- function(input, output, session) {
     population <- sum(data_geo$population, na.rm = TRUE)
     median_age <- weighted.mean(data_geo$median_age, w = data_geo$population, na.rm = TRUE)
     median_income <- weighted.mean(data_geo$median_income, w = data_geo$population, na.rm = TRUE)
+    pct_elderly <- weighted.mean(data_geo$pct_elderly, w = data_geo$population, na.rm = TRUE)
+    poverty_rate <- weighted.mean(data_geo$poverty_rate, w = data_geo$population, na.rm = TRUE)
     disaster_count <- sum(data_geo$disaster_count, na.rm = TRUE)
     land_area <- sum(data_geo$land_area_sq_mi, na.rm = TRUE)
     pop_density <- ifelse(land_area > 0, population / land_area, NA_real_)
@@ -1217,6 +1241,8 @@ server <- function(input, output, session) {
       population = population,
       median_age = median_age,
       median_income = median_income,
+      pct_elderly = pct_elderly,
+      poverty_rate = poverty_rate,
       disaster_count = disaster_count,
       land_area_sq_mi = land_area,
       pop_density = pop_density,
@@ -2133,6 +2159,9 @@ server <- function(input, output, session) {
     disaster_count <- ifelse(!is.null(summary), summary$disaster_count, NA)
     median_age <- ifelse(!is.null(summary), summary$median_age, NA)
     median_income <- ifelse(!is.null(summary), summary$median_income, NA)
+    pct_elderly <- ifelse(!is.null(summary), summary$pct_elderly, NA)
+    poverty_rate <- ifelse(!is.null(summary), summary$poverty_rate, NA)
+    pop_density <- ifelse(!is.null(summary), summary$pop_density, NA)
 
     summary_text <- paste(
       "Region:", region_text,
@@ -2140,6 +2169,9 @@ server <- function(input, output, session) {
       "Relative risk:", ifelse(is.na(risk_ratio), "NA", round(risk_ratio, 2)),
       "Median age:", ifelse(is.na(median_age), "NA", round(median_age, 1)),
       "Median income:", ifelse(is.na(median_income), "NA", round(median_income, 0)),
+      "Percent elderly:", ifelse(is.na(pct_elderly), "NA", round(pct_elderly * 100, 1)),
+      "Poverty rate:", ifelse(is.na(poverty_rate), "NA", round(poverty_rate * 100, 1)),
+      "Population density:", ifelse(is.na(pop_density), "NA", round(pop_density, 1)),
       "Disaster count:", ifelse(is.na(disaster_count), "NA", disaster_count),
       "Department makeup:", dept_type_text,
       "Department size:", input$dept_size,
