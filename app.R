@@ -17,6 +17,7 @@ last_refresh_path <- "data/last_refresh.txt"
 feed_url <- "https://apps.usfa.fema.gov/firefighter-fatalities/api/fatalityDatums/feed"
 download_url <- "https://apps.usfa.fema.gov/firefighter-fatalities/api/csv"
 default_model <- "gemini-2.5-flash"
+census_year <- 2022
 
 # ---- Helpers: data normalization ----
 normalize_names <- function(df) {
@@ -71,6 +72,7 @@ normalize_data <- function(df) {
   out$incident_category <- classify_incident(out)
   out$region <- state_to_region(out$state)
   out$rank_group <- rank_group(out$rank)
+  out$state_name <- state_name_from_abbr(out$state)
   out
 }
 
@@ -110,6 +112,12 @@ parse_date <- function(x) {
       lubridate::dmy(x)
     )
   )
+}
+
+state_name_from_abbr <- function(x) {
+  x <- toupper(str_trim(x))
+  lookup <- setNames(state.name, state.abb)
+  unname(lookup[x])
 }
 
 # ---- Helpers: refresh bookkeeping ----
@@ -234,9 +242,17 @@ call_gemini <- function(input_text, instructions, model = default_model) {
 # ---- LLM: guidance generation ----
 generate_llm_guidance <- function(summary_text, model = default_model) {
   instructions <- paste(
-    "You are generating concise prevention guidance for fire department leadership.",
-    "Use clear, non-technical language.",
-    "Return 3-5 sentences."
+    "You are a fire service safety analyst writing guidance for fire department leadership.",
+    "Interpret results as associations, not causation.",
+    "Be practical, concise, and professional.",
+    "Consider how disaster frequency may influence firefighter operational risk.",
+    "Return structured output with these sections:",
+    "Risk Overview (2-3 sentences)",
+    "Training Recommendations (bullet points)",
+    "Health and Safety Interventions (bullet points)",
+    "Equipment and Resource Needs (bullet points)",
+    "Operational Policy Considerations (bullet points)",
+    "Keep total length under 250 words."
   )
   call_gemini(summary_text, instructions, model = model)
 }
@@ -289,6 +305,68 @@ generate_profile_summary <- function(profile_text, reports_text, model = default
   )
 
   call_gemini(input_text, instructions, model = model)
+}
+
+# ---- Census + FEMA data ----
+get_census_data <- function(year = census_year) {
+  key <- Sys.getenv("CENSUS_API_KEY")
+  if (key == "") return(NULL)
+
+  url <- paste0(
+    "https://api.census.gov/data/",
+    year,
+    "/acs/acs5?get=NAME,B01003_001E,B01002_001E,B19013_001E&for=state:*&key=",
+    key
+  )
+
+  resp <- tryCatch(httr::GET(url), error = function(e) NULL)
+  if (is.null(resp) || httr::status_code(resp) >= 400) return(NULL)
+
+  raw <- tryCatch(jsonlite::fromJSON(httr::content(resp, as = "text", encoding = "UTF-8")), error = function(e) NULL)
+  if (is.null(raw) || length(raw) <= 1) return(NULL)
+
+  df <- as.data.frame(raw, stringsAsFactors = FALSE)
+  names(df) <- df[1, ]
+  df <- df[-1, ]
+
+  df %>%
+    transmute(
+      NAME,
+      population = as.numeric(B01003_001E),
+      median_age = as.numeric(B01002_001E),
+      median_income = as.numeric(B19013_001E),
+      state = state.abb[match(NAME, state.name)]
+    )
+}
+
+get_fema_data <- function(max_pages = 5, page_size = 5000) {
+  base <- "https://www.fema.gov/api/open/v2/DisasterDeclarationsSummaries"
+  all_rows <- list()
+
+  for (i in seq_len(max_pages)) {
+    skip <- (i - 1) * page_size
+    url <- paste0(
+      base,
+      "?$select=state,declarationDate",
+      "&$top=", page_size,
+      "&$skip=", skip
+    )
+    resp <- tryCatch(httr::GET(url), error = function(e) NULL)
+    if (is.null(resp) || httr::status_code(resp) >= 400) break
+
+    raw <- tryCatch(jsonlite::fromJSON(httr::content(resp, as = "text", encoding = "UTF-8")), error = function(e) NULL)
+    if (is.null(raw$DisasterDeclarationsSummaries) || nrow(raw$DisasterDeclarationsSummaries) == 0) break
+    all_rows[[length(all_rows) + 1]] <- raw$DisasterDeclarationsSummaries
+
+    if (nrow(raw$DisasterDeclarationsSummaries) < page_size) break
+  }
+
+  if (length(all_rows) == 0) return(NULL)
+
+  bind_rows(all_rows) %>%
+    mutate(state = toupper(state)) %>%
+    group_by(state) %>%
+    summarize(disaster_count = n(), .groups = "drop")
 }
 
 # ---- Formatting: incident analysis ----
@@ -664,6 +742,13 @@ ui <- fluidPage(
           "Industrial"
         )
       ),
+      sliderInput("percent_volunteer", "Percent Volunteer", min = 0, max = 100, value = 50),
+      selectInput(
+        "incident_exposure",
+        "Incident Exposure Level",
+        choices = c("Low", "Medium", "High"),
+        selected = "Medium"
+      ),
       numericInput("dept_size", "Department Size", value = 50, min = 1),
       tags$div(
         tags$label("Department Challenges / Comments", `for` = "dept_comments"),
@@ -696,6 +781,7 @@ ui <- fluidPage(
           "Regional Risks",
           h3("Fatality Risk Summary"),
           textOutput("risk_summary"),
+          uiOutput("risk_overview"),
           tableOutput("top_causes"),
           h3("Fatalities Over Time"),
           plotOutput("trend_plot", height = "250px"),
@@ -841,6 +927,8 @@ server <- function(input, output, session) {
   data_state <- reactiveVal(get_data())
   refresh_timer <- reactiveTimer(24 * 60 * 60 * 1000)
   last_refresh_state <- reactiveVal(read_last_refresh())
+  census_state <- reactiveVal(get_census_data())
+  fema_state <- reactiveVal(get_fema_data())
   llm_state <- reactiveVal(list(status = "LLM guidance not generated yet.", guidance = NULL))
   reports_state <- reactiveVal(list(status = "No reports analyzed yet.", analysis = NULL))
   training_state <- reactiveVal(list(status = "No training plan generated yet.", plan = NULL))
@@ -890,6 +978,34 @@ server <- function(input, output, session) {
     df
   })
 
+  model_data <- reactive({
+    df <- data_state()
+    census <- census_state()
+    fema <- fema_state()
+    if (is.null(census) || nrow(df) == 0) return(NULL)
+
+    fatalities <- df %>%
+      filter(!is.na(state)) %>%
+      count(state, name = "deaths")
+
+    census <- census %>% filter(!is.na(state))
+    combined <- fatalities %>%
+      left_join(census, by = "state")
+
+    if (!is.null(fema)) {
+      combined <- combined %>%
+        left_join(fema, by = "state") %>%
+        mutate(disaster_count = ifelse(is.na(disaster_count), 0, disaster_count))
+    } else {
+      combined <- combined %>% mutate(disaster_count = 0)
+    }
+
+    combined %>%
+      mutate(
+        deaths_per_100k = (deaths / population) * 100000
+      )
+  })
+
   profile_filtered <- reactive({
     df <- data_state()
     if (nrow(df) == 0) return(df)
@@ -936,12 +1052,100 @@ server <- function(input, output, session) {
     last_refresh_state(read_last_refresh())
   })
 
+  observeEvent(data_state(), {
+    if (is.null(census_state())) census_state(get_census_data())
+    if (is.null(fema_state())) fema_state(get_fema_data())
+  })
+
   output$data_source <- renderText({
     src <- attr(data_state(), "source")
     if (src == "refreshed") "Data source: refreshed from USFA API"
     else if (src == "cache") "Data source: cached USFA API download"
     else if (src == "local") "Data source: local file (ff_data.csv)"
     else "Data source: bundled sample data"
+  })
+
+  model_fit <- reactive({
+    data <- model_data()
+    if (is.null(data)) return(NULL)
+    data <- data %>%
+      filter(!is.na(population), population > 0, !is.na(median_age), !is.na(median_income))
+    if (nrow(data) < 5) return(NULL)
+
+    tryCatch(
+      glm(
+        deaths ~ median_age + median_income + disaster_count,
+        family = "poisson",
+        offset = log(population),
+        data = data
+      ),
+      error = function(e) NULL
+    )
+  })
+
+  geo_states <- reactive({
+    df <- data_state()
+    if (input$geo_mode == "state") {
+      if (is.null(input$state) || input$state == "All") {
+        return(unique(na.omit(df$state)))
+      }
+      return(input$state)
+    }
+
+    if (is.null(input$region) || input$region == "All") {
+      return(unique(na.omit(df$state)))
+    }
+
+    states <- df %>%
+      filter(region == input$region, !is.na(state)) %>%
+      pull(state) %>%
+      unique()
+    states
+  })
+
+  output$risk_overview <- renderUI({
+    data <- model_data()
+    if (is.null(data) || nrow(data) == 0) {
+      return(tags$div(
+        class = "card",
+        tags$div(class = "card-title", "Risk-Adjusted Metrics"),
+        tags$p("Census data unavailable. Set CENSUS_API_KEY to enable risk-adjusted metrics.")
+      ))
+    }
+
+    states <- geo_states()
+    data_geo <- data %>% filter(state %in% states)
+    if (nrow(data_geo) == 0) return(NULL)
+
+    deaths <- sum(data_geo$deaths, na.rm = TRUE)
+    population <- sum(data_geo$population, na.rm = TRUE)
+    rate <- ifelse(population > 0, (deaths / population) * 100000, NA_real_)
+    national_rate <- mean(data$deaths_per_100k, na.rm = TRUE)
+    comparison <- ifelse(!is.na(rate) && !is.na(national_rate),
+                         ifelse(rate >= national_rate, "above", "below"), "unknown")
+    disaster_total <- sum(data_geo$disaster_count, na.rm = TRUE)
+
+    risk_text <- "Select a state to view modeled risk."
+    if (input$geo_mode == "state" && !is.null(input$state) && input$state != "All") {
+      fit <- model_fit()
+      if (!is.null(fit)) {
+        row <- data %>% filter(state == input$state) %>% slice(1)
+        if (nrow(row) == 1) {
+          pred <- predict(fit, newdata = row, type = "response")
+          risk_ratio <- pred / mean(data$deaths, na.rm = TRUE)
+          risk_text <- paste0("Modeled relative risk: ", round(risk_ratio, 2), " (associations, not causation).")
+        }
+      }
+    }
+
+    tags$div(
+      class = "card",
+      tags$div(class = "card-title", "Risk-Adjusted Metrics"),
+      tags$p(paste0("Fatalities per 100k: ", ifelse(is.na(rate), "NA", round(rate, 2)))),
+      tags$p(paste0("Compared to national average: ", comparison)),
+      tags$p(paste0("Total FEMA disaster declarations: ", ifelse(is.na(disaster_total), "NA", disaster_total))),
+      tags$p(risk_text)
+    )
   })
 
   output$last_refreshed <- renderText({
@@ -1655,10 +1859,40 @@ server <- function(input, output, session) {
       "Not provided"
     }
 
+    census_row <- NULL
+    disaster_count <- NA
+    fatality_rate <- NA
+    risk_ratio <- NA
+    median_age <- NA
+    median_income <- NA
+
+    data <- model_data()
+    if (!is.null(data) && input$geo_mode == "state" && !is.null(input$state) && input$state != "All") {
+      census_row <- data %>% filter(state == input$state) %>% slice(1)
+      if (nrow(census_row) == 1) {
+        fatality_rate <- census_row$deaths_per_100k
+        disaster_count <- census_row$disaster_count
+        median_age <- census_row$median_age
+        median_income <- census_row$median_income
+      }
+      fit <- model_fit()
+      if (!is.null(fit) && nrow(census_row) == 1) {
+        pred <- predict(fit, newdata = census_row, type = "response")
+        risk_ratio <- pred / mean(data$deaths, na.rm = TRUE)
+      }
+    }
+
     summary_text <- paste(
       "Region:", region_text,
+      "Fatality rate per 100k:", ifelse(is.na(fatality_rate), "NA", round(fatality_rate, 2)),
+      "Relative risk:", ifelse(is.na(risk_ratio), "NA", round(risk_ratio, 2)),
+      "Median age:", ifelse(is.na(median_age), "NA", round(median_age, 1)),
+      "Median income:", ifelse(is.na(median_income), "NA", round(median_income, 0)),
+      "Disaster count:", ifelse(is.na(disaster_count), "NA", disaster_count),
       "Department makeup:", dept_type_text,
       "Department size:", input$dept_size,
+      "Percent volunteer:", input$percent_volunteer,
+      "Incident exposure level:", input$incident_exposure,
       "Top causes:", cause_text,
       "Top incident types:", incident_text,
       comment_text

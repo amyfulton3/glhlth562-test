@@ -17,6 +17,10 @@ This is a **data product** (not a static report). It accepts user input about re
 
 - **USFA Firefighter Fatalities API (CSV + RSS feed)**  
   Used for historical fatality records and automated refresh checks.
+- **US Census Bureau ACS 5-year estimates (via Census API)**  
+  Population, median age, and median household income for risk normalization.
+- **FEMA Disaster Declarations Summaries API**  
+  Disaster counts by state as an operational exposure proxy.
 
 ### 2) Ingestion
 
@@ -62,6 +66,18 @@ Dependencies are captured in `manifest.json` for Connect Cloud.
 
 ```r
 GEMINI_API_KEY=your_key_here
+```
+
+Restart R after setting the key.
+
+## Census API key setup
+
+The Census API key is required to pull ACS data.
+
+Set it in your environment as `CENSUS_API_KEY`, for example in `.Renviron`:
+
+```r
+CENSUS_API_KEY=your_key_here
 ```
 
 Restart R after setting the key.
