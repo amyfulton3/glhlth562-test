@@ -247,6 +247,7 @@ generate_llm_guidance <- function(summary_text, model = default_model) {
     "Be practical, concise, and professional.",
     "Consider how disaster frequency may influence firefighter operational risk.",
     "Consider demographic vulnerability such as age structure and poverty.",
+    "Consider evacuation challenges where vehicle access is limited and housing density is high.",
     "Return structured output with these sections:",
     "Risk Overview (2-3 sentences)",
     "Training Recommendations (bullet points)",
@@ -335,12 +336,14 @@ get_census_data <- function(year = census_year) {
     "B01001_044E","B01001_045E","B01001_046E","B01001_047E","B01001_048E","B01001_049E"
   )
   poverty_vars <- c("B17001_001E","B17001_002E")
+  vehicle_vars <- c("B08201_001E","B08201_002E")
+  housing_vars <- c("B25001_001E")
 
   url <- paste0(
     "https://api.census.gov/data/",
     year,
     "/acs/acs5?get=NAME,B01003_001E,B01002_001E,B19013_001E,",
-    paste(c(elderly_vars, poverty_vars), collapse = ","),
+    paste(c(elderly_vars, poverty_vars, vehicle_vars, housing_vars), collapse = ","),
     "&for=state:*&key=",
     key
   )
@@ -364,13 +367,17 @@ get_census_data <- function(year = census_year) {
       elderly_pop = rowSums(across(all_of(elderly_vars), as.numeric), na.rm = TRUE),
       poverty_total = as.numeric(B17001_001E),
       poverty_below = as.numeric(B17001_002E),
+      households_total = as.numeric(B08201_001E),
+      households_no_vehicle = as.numeric(B08201_002E),
+      housing_units = as.numeric(B25001_001E),
       state = state.abb[match(NAME, state.name)]
     )
 
   df %>%
     mutate(
       pct_elderly = ifelse(population > 0, elderly_pop / population, NA_real_),
-      poverty_rate = ifelse(poverty_total > 0, poverty_below / poverty_total, NA_real_)
+      poverty_rate = ifelse(poverty_total > 0, poverty_below / poverty_total, NA_real_),
+      no_vehicle_rate = ifelse(households_total > 0, households_no_vehicle / households_total, NA_real_)
     )
 }
 
@@ -863,8 +870,17 @@ ui <- fluidPage(
             style = "color: var(--muted);"
           ),
           tags$p(
-            "This gauge summarizes modeled relative risk (associations, not causation) using population density, percent elderly, poverty rate, and disaster exposure.",
+            "This gauge summarizes modeled relative risk (associations, not causation).",
             style = "color: var(--muted);"
+          ),
+          tags$ul(
+            style = "color: var(--muted); margin-top: -6px;",
+            tags$li("Population density (urban vs. rural operational complexity)."),
+            tags$li("Housing density (structure fire exposure)."),
+            tags$li("Percent elderly (cardiac and vulnerability risk)."),
+            tags$li("Poverty rate (resource constraints and vulnerability)."),
+            tags$li("Households without vehicles (evacuation/rescue burden)."),
+            tags$li("FEMA disaster count (operational surge exposure).")
           ),
           plotOutput("risk_gauge_plot", height = "220px"),
           textOutput("risk_label"),
@@ -874,7 +890,7 @@ ui <- fluidPage(
           "Benchmarking",
           h3("Benchmarking"),
           tags$p(
-            "Compare your selected geography with national averages and similarly populated states. Metrics are modeled using population density, percent elderly, poverty rate, and disaster exposure.",
+            "Compare your selected geography with national averages and similarly populated states. Metrics use population density, housing density, percent elderly, poverty rate, no-vehicle rate, and FEMA disaster exposure.",
             style = "color: var(--muted);"
           ),
           tableOutput("benchmark_table")
@@ -1114,7 +1130,9 @@ server <- function(input, output, session) {
       mutate(
         land_area_sq_mi = state.area[match(state, state.abb)],
         pop_density = ifelse(!is.na(land_area_sq_mi) & land_area_sq_mi > 0, population / land_area_sq_mi, NA_real_),
-        log_density = log(pop_density + 1)
+        log_density = log(pop_density + 1),
+        housing_density = ifelse(!is.na(land_area_sq_mi) & land_area_sq_mi > 0, housing_units / land_area_sq_mi, NA_real_),
+        log_housing_density = log(housing_density + 1)
       ) %>%
       mutate(
         deaths_per_100k = (deaths / population) * 100000
@@ -1185,12 +1203,12 @@ server <- function(input, output, session) {
     data <- model_data()
     if (is.null(data)) return(NULL)
     data <- data %>%
-      filter(!is.na(population), population > 0, !is.na(pct_elderly), !is.na(poverty_rate), !is.na(log_density))
+      filter(!is.na(population), population > 0, !is.na(pct_elderly), !is.na(poverty_rate), !is.na(log_density), !is.na(no_vehicle_rate), !is.na(log_housing_density))
     if (nrow(data) < 5) return(NULL)
 
     tryCatch(
       glm(
-        deaths ~ log_density + pct_elderly + poverty_rate + disaster_count,
+        deaths ~ log_density + log_housing_density + pct_elderly + poverty_rate + no_vehicle_rate + disaster_count,
         family = "poisson",
         offset = log(population),
         data = data
@@ -1232,6 +1250,7 @@ server <- function(input, output, session) {
     median_income <- weighted.mean(data_geo$median_income, w = data_geo$population, na.rm = TRUE)
     pct_elderly <- weighted.mean(data_geo$pct_elderly, w = data_geo$population, na.rm = TRUE)
     poverty_rate <- weighted.mean(data_geo$poverty_rate, w = data_geo$population, na.rm = TRUE)
+    no_vehicle_rate <- weighted.mean(data_geo$no_vehicle_rate, w = data_geo$households_total, na.rm = TRUE)
     disaster_count <- sum(data_geo$disaster_count, na.rm = TRUE)
     land_area <- sum(data_geo$land_area_sq_mi, na.rm = TRUE)
     pop_density <- ifelse(land_area > 0, population / land_area, NA_real_)
@@ -1243,10 +1262,13 @@ server <- function(input, output, session) {
       median_income = median_income,
       pct_elderly = pct_elderly,
       poverty_rate = poverty_rate,
+      no_vehicle_rate = no_vehicle_rate,
       disaster_count = disaster_count,
       land_area_sq_mi = land_area,
       pop_density = pop_density,
       log_density = log(pop_density + 1),
+      housing_density = ifelse(land_area > 0, sum(data_geo$housing_units, na.rm = TRUE) / land_area, NA_real_),
+      log_housing_density = log(ifelse(land_area > 0, sum(data_geo$housing_units, na.rm = TRUE) / land_area, 0) + 1),
       deaths_per_100k = ifelse(population > 0, (deaths / population) * 100000, NA_real_)
     )
   })
@@ -2162,6 +2184,8 @@ server <- function(input, output, session) {
     pct_elderly <- ifelse(!is.null(summary), summary$pct_elderly, NA)
     poverty_rate <- ifelse(!is.null(summary), summary$poverty_rate, NA)
     pop_density <- ifelse(!is.null(summary), summary$pop_density, NA)
+    housing_density <- ifelse(!is.null(summary), summary$housing_density, NA)
+    no_vehicle_rate <- ifelse(!is.null(summary), summary$no_vehicle_rate, NA)
 
     summary_text <- paste(
       "Region:", region_text,
@@ -2171,7 +2195,9 @@ server <- function(input, output, session) {
       "Median income:", ifelse(is.na(median_income), "NA", round(median_income, 0)),
       "Percent elderly:", ifelse(is.na(pct_elderly), "NA", round(pct_elderly * 100, 1)),
       "Poverty rate:", ifelse(is.na(poverty_rate), "NA", round(poverty_rate * 100, 1)),
+      "Households without vehicles:", ifelse(is.na(no_vehicle_rate), "NA", round(no_vehicle_rate * 100, 1)),
       "Population density:", ifelse(is.na(pop_density), "NA", round(pop_density, 1)),
+      "Housing density:", ifelse(is.na(housing_density), "NA", round(housing_density, 1)),
       "Disaster count:", ifelse(is.na(disaster_count), "NA", disaster_count),
       "Department makeup:", dept_type_text,
       "Department size:", input$dept_size,
