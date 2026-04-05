@@ -1,6 +1,6 @@
 ---
 title: "Fire Department Preparedness Dashboard"
-subtitle: "GLHLTH 562 Final Project"
+subtitle: "Amy Fulton: GLHLTH 562 Final Project"
 title-slide-attributes:
   class: title-slide
 format:
@@ -47,3 +47,10 @@ https://connect.posit.cloud/amyfulton3/content/019d0762-ff21-8b3e-4699-26112368e
 - Expand validation of LLM outputs
 - Add role-specific training plans
 - Validate with more target users
+
+![](assets/helmet.svg){.slide-icon}
+
+## Thank You
+
+![](assets/thankyou1.jpg){width=45%}
+![](assets/thankyou2.jpg){width=45%}
