@@ -122,6 +122,8 @@ The app checks the USFA RSS feed once every 24 hours while running. If a newer `
 ```
 .
 ├── app.R
+├── deck/
+│   └── presentation.qmd
 ├── data/
 │   ├── fatalities.csv
 │   └── last_refresh.txt
@@ -178,6 +180,16 @@ Make sure `manifest.json` is present in the repo (it is committed).
 - **API integration:** yes (USFA + Census + FEMA).
 - **GenAI in pipeline:** yes (Gemini generates guidance, incident analysis, training plans, preparedness plan, profile summaries).
 - **Automation:** yes (daily refresh timer + manual refresh).
+
+## Presentation Slides (Quarto)
+
+The presentation deck lives at `deck/presentation.qmd`.
+
+To render it locally:
+
+```bash
+quarto render deck/presentation.qmd
+```
 - **Reproducibility:** documented env vars + `manifest.json` + deployment steps.
 
 If **Automatically publish on push** is enabled, any push to `main` will republish the app.
