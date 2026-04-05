@@ -1,0 +1,38 @@
+---
+title: "Fire Department Preparedness Dashboard"
+subtitle: "GLHLTH 562 Final Project"
+format:
+  revealjs:
+    theme: [simple]
+    slide-number: true
+    transition: fade
+    incremental: false
+---
+
+## What problem does your product address?
+
+- Fire department leaders need quick, actionable guidance based on historical firefighter fatality patterns.
+- Existing data is scattered across large datasets and not tailored to local department characteristics.
+- This product turns USFA fatality data plus Census/FEMA context into practical prevention and preparedness guidance.
+
+## Live demo / walkthrough
+
+1. Select region or state, department makeup, and incident types.
+2. Review regional risk summary and personnel patterns.
+3. Generate prevention guidance (LLM) and a 12-month training plan.
+4. Explore disaster preparedness guidance and download the training plan as a PDF.
+
+## Key design decisions & trade-offs
+
+- **Chose Shiny** for fast iteration and user-friendly interaction.
+- **API-first data pipeline** (USFA + Census + FEMA) to avoid static, outdated data.
+- **LLM output structured into sections** for clarity, but kept short to reduce hallucinations.
+- **Risk gauges show associations (not causation)** to avoid overclaiming.
+- **Simple models and interpretable visuals** over complex ML to keep outputs explainable.
+
+## What I would improve with more time
+
+- Add more robust exposure metrics (e.g., incident volume from NFIRS/NERIS).
+- Expand validation of LLM outputs against SME guidance.
+- Add role-specific training plans and benchmarking against similar departments.
+- Incorporate user-uploaded data for local incident history.
