@@ -9,7 +9,7 @@ format:
     css: theme.css
     slide-number: true
     transition: fade
-    incremental: false
+    incremental: true
 ---
 
 ![](assets/helmet.svg){.slide-icon}
