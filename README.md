@@ -66,7 +66,16 @@ setwd("/Users/amyfulton/Desktop/glhlth562-test")
 shiny::runApp()
 ```
 
-Dependencies are captured in `manifest.json` for Connect Cloud.
+Dependencies are captured in `manifest.json` for Connect Cloud.  
+For local runs, install the packages listed at the top of `app.R`.
+
+## Code Organization
+
+`app.R` is organized into clearly labeled sections:
+- Packages and configuration
+- Helpers (data normalization, refresh logic, modeling, LLM calls)
+- UI definitions
+- Server logic
 
 ## Gemini API key setup
 
@@ -122,15 +131,24 @@ The app checks the USFA RSS feed once every 24 hours while running. If a newer `
 ```
 .
 ├── app.R
+├── R/
+│   └── .gitkeep
 ├── deck/
-│   └── presentation.qmd
+│   ├── presentation.qmd
+│   ├── presentation.html
+│   └── presentation_files/
 ├── data/
 │   ├── fatalities.csv
 │   └── last_refresh.txt
 ├── manifest.json
 ├── .github/workflows/deploy-shinyapps.yml
+├── .gitignore
 └── README.md
 ```
+
+Additional files used locally:
+- `.Renviron.example` (template for API keys)
+- `scripts/` (optional helper scripts)
 
 ## GitHub Actions deployment (Posit Connect)
 
@@ -174,12 +192,20 @@ Make sure `manifest.json` is present in the repo (it is committed).
 
 ## Republishing on Connect Cloud
 
+If **Automatically publish on push** is enabled, any push to `main` will republish the app.
+
+If it’s disabled:
+1. Open your app on connect.posit.cloud.
+2. Click **Publish** or **Republish**.
+3. Choose the latest commit from `main`.
+
 ## Rubric Coverage Summary (Quick Check)
 
 - **User input:** yes (region/state, personnel makeup, incident types, equipment, comments, profile inputs).
 - **API integration:** yes (USFA + Census + FEMA).
 - **GenAI in pipeline:** yes (Gemini generates guidance, incident analysis, training plans, preparedness plan, profile summaries).
 - **Automation:** yes (daily refresh timer + manual refresh).
+- **Reproducibility:** documented env vars + `manifest.json` + deployment steps.
 
 ## Presentation Slides (Quarto)
 
@@ -190,11 +216,3 @@ To render it locally:
 ```bash
 quarto render deck/presentation.qmd
 ```
-- **Reproducibility:** documented env vars + `manifest.json` + deployment steps.
-
-If **Automatically publish on push** is enabled, any push to `main` will republish the app.
-
-If it’s disabled:
-1. Open your app on connect.posit.cloud.
-2. Click **Publish** or **Republish**.
-3. Choose the latest commit from `main`.
