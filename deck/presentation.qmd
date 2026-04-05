@@ -6,7 +6,7 @@ title-slide-attributes:
 format:
   revealjs:
     theme: [simple]
-    css: deck/theme.css
+    css: theme.css
     slide-number: true
     transition: fade
     incremental: false
