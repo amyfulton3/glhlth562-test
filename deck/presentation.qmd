@@ -12,12 +12,16 @@ format:
     incremental: false
 ---
 
+![](assets/helmet.svg){.slide-icon}
+
 ## Problem Addressed
 
 - Firefighter fatalities (LODDs) are **largely preventable**
 - Fire department leaders need **actionable guidance** to improve training and incident planning
 - Existing data is scattered across large datasets and not tailored to specific department characteristics, making it **inaccessible** to most fire leadership
 - This product combines USFA fatality data with Census and FEMA context **into practical prevention and preparedness guidance.**
+
+![](assets/helmet.svg){.slide-icon}
 
 ## Live Demo / Walkthrough
 
@@ -27,6 +31,8 @@ format:
 - Explore classifications from your incident narratives
 - Explore disaster preparedness guidance
 
+![](assets/helmet.svg){.slide-icon}
+
 ## Key Design Decisions & Trade-Offs
 
 - **Fatalities, not injuries** volume of data vs. quality and standard reporting
@@ -34,6 +40,8 @@ format:
 - **Formatting of graphs and charts** legible for 10 - 1,000 data points
 - **Outputs structured into sections** for clarity & separate purposes
 - **Simple models and interpretations** to make accessible for audience
+
+![](assets/helmet.svg){.slide-icon}
 
 ## What I Would Improve With More Time
 

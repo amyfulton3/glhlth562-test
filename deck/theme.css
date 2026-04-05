@@ -66,3 +66,9 @@
   background: linear-gradient(90deg, #2b0f0a, #1a0f0b 45%, #0b0b0c);
   border-radius: 16px;
 }
+
+.reveal .slide-icon {
+  width: 42px;
+  height: 42px;
+  margin: 0 0 10px 0;
+}
