@@ -50,7 +50,8 @@ https://connect.posit.cloud/amyfulton3/content/019d0762-ff21-8b3e-4699-26112368e
 
 ![](assets/helmet.svg){.slide-icon}
 
-## THANK YOU
+## Thank You
 
-![](assets/thankyou1.jpg){width=35%}
-![](assets/thankyou2.jpg){width=35%}
+![](assets/thankyou1.jpg){width=30%}
+![](assets/thankyou2.jpg){width=30%}
+![](assets/thankyou3.jpg){width=30%}
