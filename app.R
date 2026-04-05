@@ -638,6 +638,37 @@ generate_guidance <- function(region, dept_type, dept_size, top_cause, top_incid
   )
 }
 
+format_guidance_cards <- function(text) {
+  if (is.null(text) || !nzchar(text)) {
+    return(tags$div(class = "card", "Click \"Generate Prevention Guidance\" to create tailored guidance with the LLM."))
+  }
+  raw <- gsub("\r", "", text)
+  chunks <- strsplit(raw, "\\*\\*")[[1]]
+  if (length(chunks) < 3) {
+    return(tags$div(class = "guidance-card", tags$p(raw)))
+  }
+
+  cards <- list()
+  idx <- 2
+  while (idx < length(chunks)) {
+    title <- str_trim(chunks[[idx]])
+    body <- str_trim(chunks[[idx + 1]])
+    lines <- unlist(strsplit(body, "\n"))
+    bullets <- str_trim(gsub("^\\*\\s*", "", lines[str_detect(lines, "^\\s*\\*")]))
+    paragraph <- str_trim(paste(lines[!str_detect(lines, "^\\s*\\*")], collapse = " "))
+
+    cards[[length(cards) + 1]] <- tags$div(
+      class = "guidance-card",
+      tags$div(class = "guidance-title", title),
+      if (nzchar(paragraph)) tags$p(paragraph) else NULL,
+      if (length(bullets) > 0) tags$ul(lapply(bullets, tags$li)) else NULL
+    )
+    idx <- idx + 2
+  }
+
+  tags$div(class = "guidance-grid", cards)
+}
+
 # ---- Incident category heuristics ----
 classify_incident <- function(df) {
   text <- paste(df$incident_type, df$property_type, df$duty, df$emergency, df$narrative, sep = " ")
@@ -738,6 +769,63 @@ extract_training_intro <- function(text) {
   list(
     concerns = if (length(concerns) > 0) concerns[1] else NULL,
     priorities = if (length(priorities) > 0) priorities[1] else NULL
+  )
+}
+
+write_training_pdf <- function(file, intro, training_table) {
+  grDevices::pdf(file, width = 8.5, height = 11)
+  on.exit(grDevices::dev.off(), add = TRUE)
+
+  grid::grid.newpage()
+  y <- 0.95
+
+  grid::grid.text(
+    "Fire Department Training Plan",
+    x = 0.5,
+    y = y,
+    gp = grid::gpar(fontsize = 18, fontface = "bold")
+  )
+  y <- y - 0.05
+
+  if (!is.null(intro)) {
+    intro_lines <- c()
+    if (!is.null(intro$concerns)) intro_lines <- c(intro_lines, intro$concerns)
+    if (!is.null(intro$priorities)) intro_lines <- c(intro_lines, intro$priorities)
+    intro_text <- paste(intro_lines, collapse = "\n")
+    for (line in strwrap(intro_text, width = 90)) {
+      grid::grid.text(line, x = 0.06, y = y, just = "left", gp = grid::gpar(fontsize = 11))
+      y <- y - 0.03
+    }
+    y <- y - 0.01
+  }
+
+  if (!is.null(training_table) && nrow(training_table) > 0) {
+    for (i in seq_len(nrow(training_table))) {
+      row <- training_table[i, ]
+      line <- paste0(
+        row$Month, ": ",
+        row$Focus, " — ",
+        row$Objective
+      )
+      for (wrap_line in strwrap(line, width = 95)) {
+        if (y < 0.06) {
+          grid::grid.newpage()
+          y <- 0.95
+        }
+        grid::grid.text(wrap_line, x = 0.06, y = y, just = "left", gp = grid::gpar(fontsize = 10))
+        y <- y - 0.027
+      }
+      y <- y - 0.008
+    }
+  } else {
+    grid::grid.text("No training plan available.", x = 0.06, y = y, just = "left", gp = grid::gpar(fontsize = 11))
+  }
+
+  grid::grid.text(
+    paste0("Generated on ", format(Sys.time(), "%Y-%m-%d %H:%M %Z")),
+    x = 0.5,
+    y = 0.02,
+    gp = grid::gpar(fontsize = 9, col = "gray50")
   )
 }
 
@@ -860,6 +948,11 @@ ui <- fluidPage(
       .card { background: #141417; border: 1px solid #2a2a2f; border-radius: 12px; padding: 12px 14px; margin: 10px 0; box-shadow: 0 6px 16px rgba(0,0,0,0.25); }
       .card-title { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.5px; color: #ffb347; margin-bottom: 6px; }
       .card ul { margin: 0 0 0 16px; }
+      .guidance-grid { display: grid; gap: 12px; margin-top: 8px; }
+      .guidance-card { background: #121215; border: 1px solid #2a2a2f; border-radius: 12px; padding: 12px 14px; box-shadow: 0 6px 16px rgba(0,0,0,0.2); }
+      .guidance-title { font-family: 'Bebas Neue', sans-serif; letter-spacing: 0.5px; color: #ffb347; font-size: 18px; margin-bottom: 6px; }
+      .guidance-card p { margin: 0 0 6px 0; color: var(--text); }
+      .guidance-card ul { margin: 0 0 0 18px; color: var(--text); }
       .nav-tabs { border-bottom: 1px solid #2a2a2f; display: flex; flex-wrap: wrap; gap: 6px; }
       .nav-tabs > li { float: none; }
       .nav-tabs > li > a { font-size: 13px; padding: 8px 10px; }
@@ -1049,7 +1142,7 @@ ui <- fluidPage(
             conditionalPanel("output.guidance_busy == true", tags$span(class = "inline-spinner"))
           ),
           textOutput("guidance_status"),
-          textOutput("guidance")
+          uiOutput("guidance")
         ),
         tabPanel(
           title = tags$span("Incident Reports", class = "tab-fatality"),
@@ -1095,6 +1188,7 @@ ui <- fluidPage(
           tags$div(
             class = "btn-inline",
             actionButton("generate_training", "Generate Training Plan"),
+            downloadButton("download_training_pdf", "Download PDF"),
             conditionalPanel("output.training_busy == true", tags$span(class = "inline-spinner"))
           ),
           textOutput("training_status"),
@@ -2204,10 +2298,9 @@ server <- function(input, output, session) {
   })
 
 
-  output$guidance <- renderText({
+  output$guidance <- renderUI({
     llm_guidance <- llm_state()$guidance
-    if (!is.null(llm_guidance)) return(llm_guidance)
-    "Click \"Generate Prevention Guidance\" to create tailored guidance with the LLM."
+    format_guidance_cards(llm_guidance)
   })
 
 
@@ -2461,6 +2554,18 @@ server <- function(input, output, session) {
     if (!is.null(parsed)) return("")
     plan
   })
+
+  output$download_training_pdf <- downloadHandler(
+    filename = function() {
+      paste0("training-plan-", Sys.Date(), ".pdf")
+    },
+    content = function(file) {
+      plan <- training_state()$plan
+      intro <- extract_training_intro(plan)
+      table <- parse_training_plan(plan)
+      write_training_pdf(file, intro, table)
+    }
+  )
 
   observeEvent(input$run_llm, {
     guidance_busy(TRUE)
