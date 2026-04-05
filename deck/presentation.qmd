@@ -1,38 +1,43 @@
 ---
 title: "Fire Department Preparedness Dashboard"
 subtitle: "GLHLTH 562 Final Project"
+title-slide-attributes:
+  class: title-slide
 format:
   revealjs:
     theme: [simple]
+    css: deck/theme.css
     slide-number: true
     transition: fade
     incremental: false
 ---
 
-## What problem does your product address?
+## Problem Addressed
 
-- Fire department leaders need quick, actionable guidance based on historical firefighter fatality patterns.
-- Existing data is scattered across large datasets and not tailored to local department characteristics.
-- This product turns USFA fatality data plus Census/FEMA context into practical prevention and preparedness guidance.
+- Firefighter fatalities (LODDs) are **largely preventable**
+- Fire department leaders need **actionable guidance** to improve training and incident planning
+- Existing data is scattered across large datasets and not tailored to specific department characteristics, making it **inaccessible** to most fire leadership
+- This product combines USFA fatality data with Census and FEMA context **into practical prevention and preparedness guidance.**
 
-## Live demo / walkthrough
+## Live Demo / Walkthrough
 
-1. Select region or state, department makeup, and incident types.
-2. Review regional risk summary and personnel patterns.
-3. Generate prevention guidance (LLM) and a 12-month training plan.
-4. Explore disaster preparedness guidance and download the training plan as a PDF.
+- Select region or state, department makeup, and incident types.
+- Review regional risk summary and personnel patterns.
+- Generate prevention guidance (LLM) and a 12-month training plan
+- Explore classifications from your incident narratives
+- Explore disaster preparedness guidance
 
-## Key design decisions & trade-offs
+## Key Design Decisions & Trade-Offs
 
-- **Chose Shiny** for fast iteration and user-friendly interaction.
-- **API-first data pipeline** (USFA + Census + FEMA) to avoid static, outdated data.
-- **LLM output structured into sections** for clarity, but kept short to reduce hallucinations.
-- **Risk gauges show associations (not causation)** to avoid overclaiming.
-- **Simple models and interpretable visuals** over complex ML to keep outputs explainable.
+- **Fatalities, not injuries** volume of data vs. quality and standard reporting
+- **Included disaster data** after noticing large fatality spikes around historical disasters
+- **Formatting of graphs and charts** legible for 10 - 1,000 data points
+- **Outputs structured into sections** for clarity & separate purposes
+- **Simple models and interpretations** to make accessible for audience
 
-## What I would improve with more time
+## What I Would Improve With More Time
 
-- Add more robust exposure metrics (e.g., incident volume from NFIRS/NERIS).
-- Expand validation of LLM outputs against SME guidance.
-- Add role-specific training plans and benchmarking against similar departments.
-- Incorporate user-uploaded data for local incident history.
+- Consider incorporation of additional data sources (NFIRS/NERIS) for incident volume, civilian fatalities, etc.
+- Expand validation of LLM outputs
+- Add role-specific training plans
+- Validate with more target users

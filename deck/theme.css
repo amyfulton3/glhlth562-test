@@ -1,0 +1,66 @@
+:root {
+  --bg: #0b0b0c;
+  --panel: #151517;
+  --panel-2: #1c1c1f;
+  --text: #f7f3ef;
+  --muted: #c7c0b8;
+  --accent: #ff6a00;
+  --accent-2: #d63230;
+  --accent-3: #ffb347;
+}
+
+.reveal {
+  font-family: "Source Sans 3", sans-serif;
+  color: var(--text);
+  background: radial-gradient(1200px 600px at 10% -10%, #3a1b12 0%, #0b0b0c 55%, #0b0b0c 100%);
+}
+
+.reveal .slides {
+  text-align: left;
+}
+
+.reveal h1,
+.reveal h2,
+.reveal h3 {
+  font-family: "Bebas Neue", sans-serif;
+  letter-spacing: 0.5px;
+  color: var(--accent-3);
+}
+
+.reveal .title {
+  font-family: "Bebas Neue", sans-serif;
+  color: var(--accent-3);
+}
+
+.reveal .subtitle {
+  color: var(--muted);
+}
+
+.reveal .slide-number {
+  color: var(--muted) !important;
+}
+
+.reveal ul {
+  margin-left: 18px;
+}
+
+.reveal li {
+  margin-bottom: 8px;
+}
+
+.reveal strong {
+  color: var(--accent-3);
+}
+
+.reveal section {
+  background: rgba(18, 18, 21, 0.75);
+  border: 1px solid #2a2a2f;
+  border-radius: 14px;
+  padding: 28px 34px;
+  box-shadow: 0 16px 30px rgba(0, 0, 0, 0.3);
+}
+
+.reveal section.title-slide {
+  background: linear-gradient(90deg, #2b0f0a, #1a0f0b 45%, #0b0b0c);
+  border-radius: 16px;
+}
