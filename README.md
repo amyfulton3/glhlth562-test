@@ -1,40 +1,35 @@
-# Firefighter Fatality Risk Dashboard (Shiny)
+# Fire Department Preparedness Dashboard (Shiny)
 
 ## Overview
 
-This is a **data product** (not a static report). It accepts user input about region, department makeup, incident types, and department challenges, then returns **tailored fatality risk summaries** and **LLM‑generated prevention guidance**. It also includes a separate incident‑report analysis workflow and a monthly training plan generator.
+This is a **data product** (not a static report). It accepts user input about region, department makeup, incident types, and department challenges, then returns **tailored fatality risk summaries** and **LLM‑generated guidance**. It also includes incident‑report analysis, a monthly training plan generator, and a disaster‑preparedness module.
 
 ## Capabilities (Requirement Checklist)
 
 - **User input (required):** region/state, personnel makeup, incident types, equipment, and department comments.
-- **API integration:** pulls firefighter fatality data from the USFA API feed and CSV endpoints.
-- **GenAI in pipeline:** uses Gemini to generate prevention guidance, incident‑report risk summaries, and a monthly training plan.
-- **Automation:** automatic daily refresh checks via the USFA RSS feed.
+- **API integration:** pulls firefighter fatality data from the USFA API feed and CSV endpoints, plus Census ACS + FEMA OpenFEMA APIs.
+- **GenAI in pipeline:** uses Gemini to generate prevention guidance, incident‑report risk summaries, training plans, and disaster‑preparedness guidance.
+- **Automation:** automatic daily refresh checks and API re‑pulls while the app is running (plus a manual refresh button).
 
 ## Data Pipeline Documentation
 
 ### 1) Data Sources
 
 - **USFA Firefighter Fatalities API (CSV + RSS feed)**  
-  Used for historical fatality records and automated refresh checks.
-- **US Census Bureau ACS 5-year estimates (via Census API)**  
-  Population, median age, and median household income for risk normalization.
-- **FEMA Disaster Declarations Summaries API**  
-  Disaster counts by state as an operational exposure proxy.
-- **FEMA Disaster Declarations (detail)**  
-  Incident types, dates, and program flags for disaster trends.
-- **FEMA Hazard Mitigation Assistance (HMA) subapplications**  
-  Mitigation investment proxy by state.
-- **FEMA Public Assistance Applicants (fire-related)**  
-  Proxy for disaster response burden on fire services.
+  Historical line‑of‑duty fatality records + auto‑refresh checks.
+- **US Census Bureau ACS 5‑year estimates (API)**  
+  Population, median age, median income, poverty rate, elderly share, housing units, and vehicle access.
+- **FEMA OpenFEMA APIs**  
+  Disaster declarations and related datasets used for exposure and preparedness context.
 
 ### 2) Ingestion
 
-- **Packages:** `readr`, `httr`, `xml2`, `dplyr`  
+- **Packages:** `readr`, `httr`, `xml2`, `jsonlite`, `dplyr`  
 - **Process:**  
   - On startup (and daily), the app checks the USFA RSS feed for updates.  
   - If a newer `pubDate` is found, it downloads the latest CSV and caches it locally in `data/fatalities.csv`.  
-  - If the API is unavailable, it falls back to the cached file or local `ff_data.csv`.
+  - Census and FEMA data are pulled via API at startup and refreshed on the same daily timer (or via the **Refresh Data Now** button).  
+  - If APIs are unavailable, the app falls back to cached fatality data and displays availability notes for Census/FEMA‑dependent panels.
 
 ### 3) Processing
 
@@ -45,16 +40,24 @@ This is a **data product** (not a static report). It accepts user input about re
   - top causes of death
   - incident mix over time
   - odds‑ratio–style comparisons by personnel type
+- **Modeling (fatality risk gauge):** Poisson regression on fatalities by state using population offset and predictors:
+  - log population density (urban vs. rural operational complexity)
+  - log housing density (structure fire exposure)
+  - FEMA disaster count (operational surge exposure)
+  - plus scenario adjustments based on department makeup, incident exposure level, and incident types.
+- **Disaster risk gauge:** standardized composite index using Census + FEMA indicators.
 
 ### 4) Outputs
 
 - **Interactive Shiny dashboard** with multiple tabs:
   - Regional risk summaries + visuals
-  - Risk gauge + benchmarking
-  - Disaster risk & preparedness (Census + FEMA + LLM)
+  - Fatality risk gauge + benchmarking
+  - Disaster risk gauge + preparedness plan (LLM)
   - Personnel risk visualization
+  - Prevention guidance (LLM)
   - Incident report analysis (LLM)
-  - Monthly training plan (LLM + equipment constraints)
+  - Monthly training plan (LLM + equipment constraints, PDF download)
+  - Individualized risk profile + recent report summary (LLM)
 
 ### 5) How to Run (Reproducibility)
 
@@ -101,9 +104,13 @@ To use the Census API in Connect Cloud, set an app-level environment variable:
    - Value: your key
 4. Save, then republish/restart the app.
 
-## Daily data refresh (USFA feed + API)
+## FEMA API access
 
-The app checks the USFA RSS feed once every 24 hours. If a newer `pubDate` is found, it downloads the latest CSV and caches it at `data/fatalities.csv`. The app will fall back to your local `ff_data.csv` if the API is unavailable.
+FEMA OpenFEMA endpoints used in this project do **not** require an API key.
+
+## Daily data refresh (USFA feed + API + Census/FEMA)
+
+The app checks the USFA RSS feed once every 24 hours while running. If a newer `pubDate` is found, it downloads the latest CSV and caches it at `data/fatalities.csv`. Census and FEMA datasets are also re‑pulled on the same daily timer and on manual refresh. The app will fall back to your local `ff_data.csv` if the USFA API is unavailable.
 
 ## Notes
 
@@ -164,6 +171,14 @@ If you are deploying via **connect.posit.cloud** with a Git repository:
 Make sure `manifest.json` is present in the repo (it is committed).
 
 ## Republishing on Connect Cloud
+
+## Rubric Coverage Summary (Quick Check)
+
+- **User input:** yes (region/state, personnel makeup, incident types, equipment, comments, profile inputs).
+- **API integration:** yes (USFA + Census + FEMA).
+- **GenAI in pipeline:** yes (Gemini generates guidance, incident analysis, training plans, preparedness plan, profile summaries).
+- **Automation:** yes (daily refresh timer + manual refresh).
+- **Reproducibility:** documented env vars + `manifest.json` + deployment steps.
 
 If **Automatically publish on push** is enabled, any push to `main` will republish the app.
 
