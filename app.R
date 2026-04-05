@@ -1283,7 +1283,7 @@ ui <- fluidPage(
             conditionalPanel("output.disaster_busy == true", tags$span(class = "inline-spinner"))
           ),
           textOutput("disaster_status"),
-          textOutput("disaster_plan")
+          uiOutput("disaster_plan")
         )
       )
     )
@@ -1852,8 +1852,8 @@ server <- function(input, output, session) {
     disaster_state()$status
   })
 
-  output$disaster_plan <- renderText({
-    disaster_state()$plan
+  output$disaster_plan <- renderUI({
+    format_guidance_cards(disaster_state()$plan)
   })
 
   output$benchmark_table <- renderTable({
