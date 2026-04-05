@@ -25,11 +25,11 @@ format:
 
 ## Live Demo / Walkthrough
 
-- Select region or state, department makeup, and incident types.
-- Review regional risk summary and personnel patterns.
-- Generate prevention guidance (LLM) and a 12-month training plan
-- Explore classifications from your incident narratives
-- Explore disaster preparedness guidance
+Live demo link:
+
+```text
+https://connect.posit.cloud/amyfulton3/content/019d0762-ff21-8b3e-4699-26112368ec1d
+```
 
 ![](assets/helmet.svg){.slide-icon}
 
