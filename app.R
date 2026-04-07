@@ -1073,7 +1073,7 @@ ui <- fluidPage(
         choices = c("Structure Fire", "Wildland", "Hazmat", "EMS", "Vehicle Incident", "Rescue"),
         selected = c("Structure Fire")
       ),
-      tags$div(style = "color: #ffb347; margin-top: 6px;", textOutput("incident_error")),
+      tags$div(style = "color: #ffb347; margin-top: 6px;", textOutput("incident_error"))
 
     ),
 
@@ -1255,7 +1255,8 @@ ui <- fluidPage(
               "Ventilation Tools",
               "Physical Conditioning Equipment"
             )
-          )        tabPanel(
+          ),
+        tabPanel(
           title = tags$span("Fatality Risk Gauge", class = "tab-fatality tab-fatality-data"),
           value = "fatality_gauge",
           h3("Fatality Risk Gauge"),
@@ -1304,7 +1305,7 @@ ui <- fluidPage(
             tags$div(class = "card-title", "Highest Disaster Exposure (per 100k)"),
             tableOutput("benchmark_top_disasters")
           )
-        ),,
+        ),
           tags$div(
             class = "btn-inline",
             actionButton("generate_training", "Generate Training Plan"),
