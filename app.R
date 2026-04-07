@@ -1405,36 +1405,10 @@ tabPanel(
           textOutput("disaster_status"),
           uiOutput("disaster_plan")
         )
-,
-          uiOutput("disaster_summary"),
-          h3("Top Disaster Types"),
-          tableOutput("disaster_types_table"),
-          h3("Preparedness Plan"),
-          tags$div(
-            class = "btn-inline",
-            actionButton("run_disaster_plan", "Generate Preparedness Plan"),
-            conditionalPanel("output.disaster_busy == true", tags$span(class = "inline-spinner"))
-          ),
-          textOutput("disaster_status"),
-          uiOutput("disaster_plan")
-        )
-
-
-,
-          uiOutput("disaster_summary"),
-          h3("Top Disaster Types"),
-          tableOutput("disaster_types_table"),
-          h3("Preparedness Plan"),
-          tags$div(
-            class = "btn-inline",
-            actionButton("run_disaster_plan", "Generate Preparedness Plan"),
-            conditionalPanel("output.disaster_busy == true", tags$span(class = "inline-spinner"))
-          ),
-          textOutput("disaster_status"),
-          uiOutput("disaster_plan")
-        )
       )
     )
+  )
+)
 # ---- Server ----
 server <- function(input, output, session) {
   data_state <- reactiveVal(get_data())
