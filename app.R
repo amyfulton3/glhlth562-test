@@ -1125,7 +1125,8 @@ ui <- fluidPage(
                 tags$li(tags$a("Get tailored prevention guidance", href = "#", id = "go_prevention")),
                 tags$li(tags$a("Analyze my incident reports", href = "#", id = "go_incident_reports")),
                 tags$li(tags$a("Get a training plan for my department", href = "#", id = "go_training_plan")),
-                tags$li(tags$a("Understand causes of fatalities for firefighters like me", href = "#", id = "go_individual"))
+                tags$li(tags$strong("Understand causes of fatalities for firefighters like me")),
+                tags$li(tags$a("Analyze fatality reports for firefighters matching my profile", href = "#", id = "go_individual"))
               )
             ),
             tags$div(
