@@ -1108,7 +1108,7 @@ ui <- fluidPage(
         ),
         tags$li(class = "tab-divider", tags$a("Fatality Risk & Minimization", href = "#")),
         tabPanel(
-          title = tags$span("Regional Risks", class = "tab-fatality"),
+          title = tags$span("Regional Risk Profile", class = "tab-fatality"),
           h3("Fatality Risk Summary"),
           textOutput("risk_summary"),
           tableOutput("top_causes"),
