@@ -16,7 +16,7 @@ format:
 
 - Firefighter fatalities (LODDs) are **largely preventable**
 - Fire department leaders need **actionable guidance** to improve training and incident planning
-- Existing data is scattered across large datasets and not tailored to specific department characteristics, making it **inaccessible** to most fire leadership
+- Existing data is scattered across large datasets and **not tailored to specific department characteristics** (personnel types, incident types, region, etc.), making it **inaccessible** to most fire leadership
 - This product combines USFA fatality data with Census and FEMA context into **interpretable visuals** and **practical preparedness guidance.**
 
 ![](assets/helmet.svg){.slide-icon}
