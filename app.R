@@ -1088,7 +1088,7 @@ ui <- fluidPage(
       class = "main",
       tabsetPanel(
         id = "main_tabs",
-        tabPanel(
+tabPanel(
           title = tags$span("Welcome", class = "tab-fatality tab-welcome"),
           value = "welcome",
           h3("Fire Department Preparedness Dashboard"),
@@ -1168,7 +1168,7 @@ ui <- fluidPage(
             )
           )
         ),
-        tabPanel(
+tabPanel(
           title = tags$span("Regional Risk Profile", class = "tab-fatality tab-fatality-data"),
           value = "regional_profile",
           h3("Fatality Risk Summary"),
@@ -1181,8 +1181,7 @@ ui <- fluidPage(
           h3("Top Causes (Selected Filters)"),
           plotOutput("cause_plot", height = "260px")
         ),
-
-        tabPanel(
+tabPanel(
           title = tags$span("Personnel", class = "tab-fatality tab-fatality-data"),
           value = "personnel",
           h3("Incident Type Odds by Personnel Type (Your Region)"),
@@ -1204,7 +1203,7 @@ ui <- fluidPage(
           plotOutput("duty_plot", height = "320px"),
           plotOutput("activity_plot", height = "520px")
         ),
-        tabPanel(
+tabPanel(
           title = tags$span("Prevention Guidance", class = "tab-fatality tab-fatality-plans"),
           value = "prevention_guidance",
           h3("Prevention Guidance"),
@@ -1220,30 +1219,7 @@ ui <- fluidPage(
           textOutput("guidance_status"),
           uiOutput("guidance")
         ),
-        tabPanel(
-          title = tags$span("Incident Reports", class = "tab-fatality tab-fatality-plans"),
-          value = "incident_reports",
-          h3("Incident Report Analysis"),
-          tags$p(
-            "Paste multiple incident reports below. The LLM will summarize key fatality risks and recommendations using historical trends.",
-            style = "color: var(--muted);"
-          ),
-          textAreaInput(
-            "incident_reports",
-            NULL,
-            placeholder = "Paste incident reports here (multiple reports are OK).",
-            width = "100%",
-            height = "180px"
-          ),
-          tags$div(
-            class = "btn-inline",
-            actionButton("analyze_reports", "Analyze Incident Reports"),
-            conditionalPanel("output.reports_busy == true", tags$span(class = "inline-spinner"))
-          ),
-          textOutput("reports_status"),
-          uiOutput("reports_analysis")
-        ),
-        tabPanel(
+tabPanel(
           title = tags$span("Fatality Risk Gauge", class = "tab-fatality tab-fatality-data"),
           value = "fatality_gauge",
           h3("Fatality Risk Gauge"),
@@ -1271,7 +1247,7 @@ ui <- fluidPage(
           textOutput("risk_label"),
           uiOutput("risk_overview")
         ),
-        tabPanel(
+tabPanel(
           title = tags$span("Geographic Trends", class = "tab-fatality tab-fatality-data"),
           value = "geographic_trends",
           h3("Geographic Trends"),
@@ -1293,7 +1269,30 @@ ui <- fluidPage(
             tableOutput("benchmark_top_disasters")
           )
         ),
-        tabPanel(
+tabPanel(
+          title = tags$span("Incident Report Analysis", class = "tab-fatality tab-fatality-plans"),
+          value = "incident_reports",
+          h3("Incident Report Analysis"),
+          tags$p(
+            "Paste multiple incident reports below. The LLM will summarize key fatality risks and recommendations using historical trends.",
+            style = "color: var(--muted);"
+          ),
+          textAreaInput(
+            "incident_reports",
+            NULL,
+            placeholder = "Paste incident reports here (multiple reports are OK).",
+            width = "100%",
+            height = "180px"
+          ),
+          tags$div(
+            class = "btn-inline",
+            actionButton("analyze_reports", "Analyze Incident Reports"),
+            conditionalPanel("output.reports_busy == true", tags$span(class = "inline-spinner"))
+          ),
+          textOutput("reports_status"),
+          uiOutput("reports_analysis")
+        ),
+tabPanel(
           title = tags$span("Training Plan", class = "tab-fatality tab-fatality-plans"),
           value = "training_plan",
           h3("Monthly Training Plan"),
@@ -1324,7 +1323,7 @@ ui <- fluidPage(
           tableOutput("training_table"),
           textOutput("training_plan")
         ),
-        tabPanel(
+tabPanel(
           title = tags$span("Individual Guidance", class = "tab-fatality tab-fatality-individual"),
           value = "individual_guidance",
           h3("Individualized Risk Profile"),
@@ -1363,7 +1362,7 @@ ui <- fluidPage(
           textOutput("profile_status"),
           uiOutput("profile_analysis")
         ),
-        tabPanel(
+tabPanel(
           title = tags$span("Disaster Risk Gauge", class = "tab-disaster"),
           value = "disaster_gauge",
           h3("Disaster Response Likelihood Gauge"),
@@ -1386,7 +1385,7 @@ ui <- fluidPage(
           plotOutput("disaster_gauge_plot", height = "220px"),
           textOutput("disaster_risk_label")
         ),
-        tabPanel(
+tabPanel(
           title = tags$span("Disaster Risk & Preparedness", class = "tab-disaster"),
           value = "disaster_preparedness",
           h3("Disaster Risk & Preparedness"),
@@ -1406,11 +1405,24 @@ ui <- fluidPage(
           textOutput("disaster_status"),
           uiOutput("disaster_plan")
         )
+
+
+,
+          uiOutput("disaster_summary"),
+          h3("Top Disaster Types"),
+          tableOutput("disaster_types_table"),
+          h3("Preparedness Plan"),
+          tags$div(
+            class = "btn-inline",
+            actionButton("run_disaster_plan", "Generate Preparedness Plan"),
+            conditionalPanel("output.disaster_busy == true", tags$span(class = "inline-spinner"))
+          ),
+          textOutput("disaster_status"),
+          uiOutput("disaster_plan")
+        )
       )
     )
   )
-)
-
 # ---- Server ----
 server <- function(input, output, session) {
   data_state <- reactiveVal(get_data())
