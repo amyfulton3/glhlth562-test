@@ -8,7 +8,6 @@ library(lubridate)
 library(httr)
 library(jsonlite)
 library(xml2)
-library(maps)
 
 # ---- Configuration ----
 data_path <- "/Users/amyfulton/Downloads/ff_data.csv"
@@ -1937,6 +1936,7 @@ server <- function(input, output, session) {
   })
 
   benchmark_map_data <- reactive({
+    if (!requireNamespace("maps", quietly = TRUE)) return(NULL)
     data <- model_data()
     if (is.null(data)) return(NULL)
 
@@ -1949,13 +1949,20 @@ server <- function(input, output, session) {
       left_join(state_lookup, by = "state") %>%
       mutate(state_name = ifelse(state == "DC", "district of columbia", state_name))
 
-    map_df <- map_data("state")
+    map_df <- ggplot2::map_data("state")
     map_df %>% left_join(data, by = c("region" = "state_name"))
   })
 
   output$benchmark_map <- renderPlot({
     df <- benchmark_map_data()
-    if (is.null(df)) return(NULL)
+    if (is.null(df)) {
+      return(
+        ggplot() +
+          theme_void(base_family = "Source Sans 3") +
+          annotate("text", x = 0, y = 0, label = "Map unavailable (install the maps package).", color = "#c7c0b8") +
+          xlim(-1, 1) + ylim(-1, 1)
+      )
+    }
 
     ggplot(df, aes(long, lat, group = group, fill = deaths_per_100k)) +
       geom_polygon(color = "#2a2a2f", size = 0.2) +
