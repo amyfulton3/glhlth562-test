@@ -1069,8 +1069,10 @@ ui <- fluidPage(
     mainPanel(
       class = "main",
       tabsetPanel(
+        id = "main_tabs",
         tabPanel(
           title = tags$span("Welcome", class = "tab-fatality"),
+          value = "welcome",
           h3("Fire Department Preparedness Dashboard"),
           tags$p(
             "A decision-support dashboard for fire department leadership that turns national fatality data into practical prevention and preparedness guidance.",
@@ -1102,13 +1104,43 @@ ui <- fluidPage(
               tags$li("Select your region/state and department makeup."),
               tags$li("Choose incident types your department responds to."),
               tags$li("Review the risk summaries and benchmarking tabs."),
-              tags$li("Generate prevention guidance and a 12-month training plan.")
+              tags$li("Generate prevention guidance and a 12‑month training plan.")
+            )
+          ),
+          tags$div(
+            class = "card",
+            tags$div(class = "card-title", "I would like to …"),
+            tags$div(
+              tags$strong("Explore fatality data:"),
+              tags$ul(
+                tags$li(tags$a("Explore historical trends in my region", href = "#", id = "go_regional_profile")),
+                tags$li(tags$a("Understand trends for my personnel types", href = "#", id = "go_personnel")),
+                tags$li(tags$a("Understand how at-risk my department is", href = "#", id = "go_fatality_gauge")),
+                tags$li(tags$a("Explore overall geographic trends", href = "#", id = "go_geographic_trends"))
+              )
+            ),
+            tags$div(
+              tags$strong("Develop plans for my department:"),
+              tags$ul(
+                tags$li(tags$a("Get tailored prevention guidance", href = "#", id = "go_prevention")),
+                tags$li(tags$a("Analyze my incident reports", href = "#", id = "go_incident_reports")),
+                tags$li(tags$a("Get a training plan for my department", href = "#", id = "go_training_plan")),
+                tags$li(tags$a("Understand causes of fatalities for firefighters like me", href = "#", id = "go_individual"))
+              )
+            ),
+            tags$div(
+              tags$strong("Plan for disasters:"),
+              tags$ul(
+                tags$li(tags$a("Understand my department’s disaster risk", href = "#", id = "go_disaster_gauge")),
+                tags$li(tags$a("Generate a disaster preparedness plan", href = "#", id = "go_disaster_plan"))
+              )
             )
           )
         ),
         tags$li(class = "tab-divider", tags$a("Fatality Risk & Minimization", href = "#")),
         tabPanel(
           title = tags$span("Regional Risk Profile", class = "tab-fatality"),
+          value = "regional_profile",
           h3("Fatality Risk Summary"),
           textOutput("risk_summary"),
           tableOutput("top_causes"),
@@ -1121,6 +1153,7 @@ ui <- fluidPage(
         ),
         tabPanel(
           title = tags$span("Fatality Risk Gauge", class = "tab-fatality"),
+          value = "fatality_gauge",
           h3("Fatality Risk Gauge"),
           tags$p(
             "Visual indicator of modeled firefighter fatality risk based on Census + FEMA context.",
@@ -1148,6 +1181,7 @@ ui <- fluidPage(
         ),
         tabPanel(
           title = tags$span("Geographic Trends", class = "tab-fatality"),
+          value = "geographic_trends",
           h3("Geographic Trends"),
           tags$p(
             "Compare your selected geography with national averages and similarly populated states. Metrics use population density, housing density, percent elderly, poverty rate, no-vehicle rate, and FEMA disaster exposure.",
@@ -1169,6 +1203,7 @@ ui <- fluidPage(
         ),
         tabPanel(
           title = tags$span("Personnel", class = "tab-fatality"),
+          value = "personnel",
           h3("Incident Type Odds by Personnel Type (Your Region)"),
           tags$p(
             "Shows how incident types are over/under-represented in fatality records by personnel type in your selected region. Reference group: overall average. This is not a population risk estimate.",
@@ -1190,6 +1225,7 @@ ui <- fluidPage(
         ),
         tabPanel(
           title = tags$span("Prevention Guidance", class = "tab-fatality"),
+          value = "prevention_guidance",
           h3("Prevention Guidance"),
           tags$p(
             "Generate tailored prevention guidance based on your region, incident types, department makeup, and challenges.",
@@ -1205,6 +1241,7 @@ ui <- fluidPage(
         ),
         tabPanel(
           title = tags$span("Incident Reports", class = "tab-fatality"),
+          value = "incident_reports",
           h3("Incident Report Analysis"),
           tags$p(
             "Paste multiple incident reports below. The LLM will summarize key fatality risks and recommendations using historical trends.",
@@ -1227,6 +1264,7 @@ ui <- fluidPage(
         ),
         tabPanel(
           title = tags$span("Training Plan", class = "tab-fatality"),
+          value = "training_plan",
           h3("Monthly Training Plan"),
           tags$p(
             "Generates a 12-month training plan based on your department characteristics and historical fatality trends.",
@@ -1257,6 +1295,7 @@ ui <- fluidPage(
         ),
         tabPanel(
           title = tags$span("Individual Guidance", class = "tab-fatality"),
+          value = "individual_guidance",
           h3("Individualized Risk Profile"),
           tags$p(
             "Explore historical fatality patterns for firefighters who match your profile.",
@@ -1296,6 +1335,7 @@ ui <- fluidPage(
         tags$li(class = "tab-divider disaster", tags$a("Disaster Preparedness", href = "#")),
         tabPanel(
           title = tags$span("Disaster Risk Gauge", class = "tab-disaster"),
+          value = "disaster_gauge",
           h3("Disaster Response Likelihood Gauge"),
           tags$p(
             "Visual indicator of modeled disaster response likelihood based on FEMA + Census indicators.",
@@ -1318,6 +1358,7 @@ ui <- fluidPage(
         ),
         tabPanel(
           title = tags$span("Disaster Risk & Preparedness", class = "tab-disaster"),
+          value = "disaster_preparedness",
           h3("Disaster Risk & Preparedness"),
           tags$p(
             "Estimate disaster exposure and generate preparedness guidance using Census + FEMA data.",
@@ -1380,6 +1421,37 @@ server <- function(input, output, session) {
       groups <- sort(unique(na.omit(df$rank_group)))
       updateSelectInput(session, "profile_rank", choices = c("All", groups), selected = "All")
     }
+  })
+
+  observeEvent(input$go_regional_profile, {
+    updateTabsetPanel(session, "main_tabs", selected = "regional_profile")
+  })
+  observeEvent(input$go_personnel, {
+    updateTabsetPanel(session, "main_tabs", selected = "personnel")
+  })
+  observeEvent(input$go_fatality_gauge, {
+    updateTabsetPanel(session, "main_tabs", selected = "fatality_gauge")
+  })
+  observeEvent(input$go_geographic_trends, {
+    updateTabsetPanel(session, "main_tabs", selected = "geographic_trends")
+  })
+  observeEvent(input$go_prevention, {
+    updateTabsetPanel(session, "main_tabs", selected = "prevention_guidance")
+  })
+  observeEvent(input$go_incident_reports, {
+    updateTabsetPanel(session, "main_tabs", selected = "incident_reports")
+  })
+  observeEvent(input$go_training_plan, {
+    updateTabsetPanel(session, "main_tabs", selected = "training_plan")
+  })
+  observeEvent(input$go_individual, {
+    updateTabsetPanel(session, "main_tabs", selected = "individual_guidance")
+  })
+  observeEvent(input$go_disaster_gauge, {
+    updateTabsetPanel(session, "main_tabs", selected = "disaster_gauge")
+  })
+  observeEvent(input$go_disaster_plan, {
+    updateTabsetPanel(session, "main_tabs", selected = "disaster_preparedness")
   })
 
   filtered <- reactive({
