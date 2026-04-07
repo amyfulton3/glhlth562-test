@@ -1095,8 +1095,8 @@ ui <- fluidPage(
             tags$ul(
               tags$li("Regional fatality risk summaries and trends"),
               tags$li("Personnel-specific risk patterns"),
-              tags$li("LLM-generated prevention guidance and training plans"),
-              tags$li("Disaster preparedness guidance using Census + FEMA context")
+              tags$li("Department-tailored prevention guidance and training plans"),
+              tags$li("Disaster preparedness guidance (historically a major source of preventable fatalities)")
             )
           ),
           tags$div(
@@ -1115,31 +1115,31 @@ ui <- fluidPage(
             tags$div(
               tags$strong("Explore fatality data:"),
               tags$ul(
-                tags$li(tags$a("Explore historical trends in my region", href = "#", id = "go_regional_profile")),
-                tags$li(tags$a("Understand trends for my personnel types", href = "#", id = "go_personnel")),
-                tags$li(tags$a("Understand how at-risk my department is", href = "#", id = "go_fatality_gauge")),
-                tags$li(tags$a("Explore overall geographic trends", href = "#", id = "go_geographic_trends"))
+                tags$li(actionLink("go_regional_profile", "Explore historical trends in my region")),
+                tags$li(actionLink("go_personnel", "Understand trends for my personnel types")),
+                tags$li(actionLink("go_fatality_gauge", "Understand how at-risk my department is")),
+                tags$li(actionLink("go_geographic_trends", "Explore overall geographic trends"))
               )
             ),
             tags$div(
               tags$strong("Develop plans for my department:"),
               tags$ul(
-                tags$li(tags$a("Get tailored prevention guidance", href = "#", id = "go_prevention")),
-                tags$li(tags$a("Analyze my incident reports", href = "#", id = "go_incident_reports")),
-                tags$li(tags$a("Get a training plan for my department", href = "#", id = "go_training_plan"))
+                tags$li(actionLink("go_prevention", "Get tailored prevention guidance")),
+                tags$li(actionLink("go_incident_reports", "Analyze my incident reports")),
+                tags$li(actionLink("go_training_plan", "Get a training plan for my department"))
               )
             ),
             tags$div(
               tags$strong("Understand causes of fatalities for firefighters like me:"),
               tags$ul(
-                tags$li(tags$a("Analyze fatality reports for firefighters matching my profile", href = "#", id = "go_individual"))
+                tags$li(actionLink("go_individual", "Analyze fatality reports for firefighters matching my profile"))
               )
             ),
             tags$div(
               tags$strong("Plan for disasters:"),
               tags$ul(
-                tags$li(tags$a("Understand my department’s disaster risk", href = "#", id = "go_disaster_gauge")),
-                tags$li(tags$a("Generate a disaster preparedness plan", href = "#", id = "go_disaster_plan"))
+                tags$li(actionLink("go_disaster_gauge", "Understand my department’s disaster risk")),
+                tags$li(actionLink("go_disaster_plan", "Generate a disaster preparedness plan"))
               )
             )
           )
