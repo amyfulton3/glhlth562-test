@@ -994,7 +994,7 @@ ui <- fluidPage(
     ),
     tags$div(
       tags$h1(class = "app-title", "Fire Department Preparedness Dashboard"),
-      tags$p(class = "app-subtitle", "Is your department ready for the unexpected? Explore how your department can minimize potential for firefighter fatalities and prepare to respond to large-scale disasters."),
+      tags$p(class = "app-subtitle", "Explore how your department can minimize potential for firefighter fatalities and prepare to respond to large-scale disasters."),
       tags$p(class = "app-subtitle", "Data auto refreshes daily"),
       tags$p(class = "app-subtitle", textOutput("last_refreshed")),
       tags$p(class = "app-subtitle", "Data sources: USFA Fatalities, Census ACS, FEMA Disasters, FEMA HMA, FEMA Public Assistance"),
@@ -1076,6 +1076,10 @@ ui <- fluidPage(
           title = tags$span("Welcome", class = "tab-fatality"),
           value = "welcome",
           h3("Fire Department Preparedness Dashboard"),
+          tags$p(
+            "Most firefighter fatalities are preventable tragedies. Explore actionable guidance to improve training, safety, and incident planning.",
+            style = "color: var(--muted);"
+          ),
           tags$p(
             "A decision-support dashboard for fire department leadership that turns national fatality data into practical prevention and preparedness guidance.",
             style = "color: var(--muted);"
