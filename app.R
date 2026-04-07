@@ -943,6 +943,8 @@ ui <- fluidPage(
       .control-label { color: var(--muted); font-weight: 600; }
       .btn { background: linear-gradient(90deg, var(--accent-2), var(--accent)); border: none; color: #fff; font-weight: 700; }
       .btn:hover { filter: brightness(1.05); }
+      a { color: #ffb347; }
+      a:hover { color: #ff6a00; }
       table { color: var(--text); }
       .shiny-output-error-validation { color: #ffb347; }
       .info-box { background: #101012; border: 1px dashed #333; padding: 10px; border-radius: 10px; margin-top: 10px; }
@@ -1124,8 +1126,12 @@ ui <- fluidPage(
               tags$ul(
                 tags$li(tags$a("Get tailored prevention guidance", href = "#", id = "go_prevention")),
                 tags$li(tags$a("Analyze my incident reports", href = "#", id = "go_incident_reports")),
-                tags$li(tags$a("Get a training plan for my department", href = "#", id = "go_training_plan")),
-                tags$li(tags$strong("Understand causes of fatalities for firefighters like me")),
+                tags$li(tags$a("Get a training plan for my department", href = "#", id = "go_training_plan"))
+              )
+            ),
+            tags$div(
+              tags$strong("Understand causes of fatalities for firefighters like me:"),
+              tags$ul(
                 tags$li(tags$a("Analyze fatality reports for firefighters matching my profile", href = "#", id = "go_individual"))
               )
             ),
