@@ -51,14 +51,17 @@ This is a **data product** (not a static report). It accepts user input about re
 ### 4) Outputs
 
 - **Interactive Shiny dashboard** with multiple tabs:
-  - Regional risk summaries + visuals
-  - Fatality risk gauge + benchmarking
-  - Disaster risk gauge + preparedness plan (LLM)
-  - Personnel risk visualization
-  - Prevention guidance (LLM)
-  - Incident report analysis (LLM)
-  - Monthly training plan (LLM + equipment constraints, PDF download)
-  - Individualized risk profile + recent report summary (LLM)
+  - Welcome (capabilities + navigation)
+  - Regional Risk Profile
+  - Personnel
+  - Fatality Risk Gauge
+  - Geographic Trends
+  - Prevention Guidance (LLM)
+  - Incident Report Analysis (LLM)
+  - Training Plan (LLM + equipment constraints, PDF download)
+  - Individual Guidance (LLM)
+  - Disaster Risk Gauge
+  - Disaster Risk & Preparedness (LLM)
 
 ### 5) How to Run (Reproducibility)
 
