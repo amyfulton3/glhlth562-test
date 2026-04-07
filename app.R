@@ -2086,7 +2086,7 @@ server <- function(input, output, session) {
         )
       )
     ) +
-      geom_polygon(color = "#2a2a2f", size = 0.2) +
+      geom_polygon(color = "#ffffff", size = 0.35) +
       scale_fill_gradient(
         low = "#1c1c1f",
         high = "#ff6a00",
