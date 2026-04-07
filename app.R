@@ -1240,11 +1240,11 @@ tabPanel(
             style = "color: var(--muted);"
           ),
           tableOutput("benchmark_table"),
-          h3("Annual Fatalities per 100k (Map)"),
+          h3("Annual FF Fatality Rates (Per 100K population)"),
           plotlyOutput("benchmark_map", height = "360px"),
           tags$div(
             class = "card",
-            tags$div(class = "card-title", "Highest Annual Fatality Rates (per 100k)"),
+            tags$div(class = "card-title", "Highest Annual FF Fatality Rates (Per 100K population)"),
             tableOutput("benchmark_top_states")
           ),
           tags$div(
@@ -2082,7 +2082,7 @@ server <- function(input, output, session) {
         fill = deaths_per_100k,
         text = paste0(
           "State: ", toupper(region), "<br>",
-          "Annual fatalities per 100k: ", ifelse(is.na(deaths_per_100k), "NA", round(deaths_per_100k, 2))
+          "Annual FF fatality rate (per 100K population): ", ifelse(is.na(deaths_per_100k), "NA", round(deaths_per_100k, 2))
         )
       )
     ) +
@@ -2101,7 +2101,7 @@ server <- function(input, output, session) {
         plot.background = element_rect(fill = "transparent", color = NA),
         panel.background = element_rect(fill = "transparent", color = NA)
       ) +
-      labs(fill = "Annual fatalities per 100k")
+      labs(fill = "Annual FF fatality rate (per 100K population)")
 
     plotly::ggplotly(plot, tooltip = "text") %>%
       plotly::layout(margin = list(l = 0, r = 0, t = 0, b = 0))
@@ -2117,7 +2117,7 @@ server <- function(input, output, session) {
       slice_head(n = 10) %>%
       transmute(
         State = state,
-        `Annual fatalities per 100k` = round(deaths_per_100k, 2)
+        `Annual FF fatality rate (per 100K population)` = round(deaths_per_100k, 2)
       )
   })
 
