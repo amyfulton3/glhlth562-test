@@ -1174,56 +1174,7 @@ ui <- fluidPage(
           h3("Top Causes (Selected Filters)"),
           plotOutput("cause_plot", height = "260px")
         ),
-        tabPanel(
-          title = tags$span("Fatality Risk Gauge", class = "tab-fatality tab-fatality-data"),
-          value = "fatality_gauge",
-          h3("Fatality Risk Gauge"),
-          tags$p(
-            "Visual indicator of modeled firefighter fatality risk based on Census + FEMA context.",
-            style = "color: var(--muted);"
-          ),
-          tags$p(
-            "This gauge summarizes modeled relative risk (associations, not causation) and applies scenario adjustments for department makeup, incident exposure level, and incident types.",
-            style = "color: var(--muted);"
-          ),
-          tags$ul(
-            style = "color: var(--muted); margin-top: -6px;",
-            tags$li("Department makeup, incident exposure level, and incident types (scenario adjustments)."),
-            tags$li("State/region baseline adjustment using observed fatality rate vs national average."),
-            tags$li("Population density (urban vs. rural operational complexity)."),
-            tags$li("Housing density (structure fire exposure)."),
-            tags$li("FEMA disaster count (operational surge exposure).")
-          ),
-          tags$p(
-            "The gauge reports a relative risk score (0–2) derived from a Poisson model of line-of-duty fatalities. Values below 1 indicate lower-than-average modeled risk; values above 1 indicate higher-than-average modeled risk.",
-            style = "color: var(--muted);"
-          ),
-          plotOutput("risk_gauge_plot", height = "220px"),
-          textOutput("risk_label"),
-          uiOutput("risk_overview")
-        ),
-        tabPanel(
-          title = tags$span("Geographic Trends", class = "tab-fatality tab-fatality-data"),
-          value = "geographic_trends",
-          h3("Geographic Trends"),
-          tags$p(
-            "Compare your selected geography with national averages and similarly populated states. Metrics use population density, housing density, percent elderly, poverty rate, no-vehicle rate, and FEMA disaster exposure.",
-            style = "color: var(--muted);"
-          ),
-          tableOutput("benchmark_table"),
-          h3("Annual Fatalities per 100k (Map)"),
-          plotlyOutput("benchmark_map", height = "360px"),
-          tags$div(
-            class = "card",
-            tags$div(class = "card-title", "Highest Annual Fatality Rates (per 100k)"),
-            tableOutput("benchmark_top_states")
-          ),
-          tags$div(
-            class = "card",
-            tags$div(class = "card-title", "Highest Disaster Exposure (per 100k)"),
-            tableOutput("benchmark_top_disasters")
-          )
-        ),
+
         tabPanel(
           title = tags$span("Personnel", class = "tab-fatality tab-fatality-data"),
           value = "personnel",
@@ -1304,7 +1255,56 @@ ui <- fluidPage(
               "Ventilation Tools",
               "Physical Conditioning Equipment"
             )
+          )        tabPanel(
+          title = tags$span("Fatality Risk Gauge", class = "tab-fatality tab-fatality-data"),
+          value = "fatality_gauge",
+          h3("Fatality Risk Gauge"),
+          tags$p(
+            "Visual indicator of modeled firefighter fatality risk based on Census + FEMA context.",
+            style = "color: var(--muted);"
           ),
+          tags$p(
+            "This gauge summarizes modeled relative risk (associations, not causation) and applies scenario adjustments for department makeup, incident exposure level, and incident types.",
+            style = "color: var(--muted);"
+          ),
+          tags$ul(
+            style = "color: var(--muted); margin-top: -6px;",
+            tags$li("Department makeup, incident exposure level, and incident types (scenario adjustments)."),
+            tags$li("State/region baseline adjustment using observed fatality rate vs national average."),
+            tags$li("Population density (urban vs. rural operational complexity)."),
+            tags$li("Housing density (structure fire exposure)."),
+            tags$li("FEMA disaster count (operational surge exposure).")
+          ),
+          tags$p(
+            "The gauge reports a relative risk score (0–2) derived from a Poisson model of line-of-duty fatalities. Values below 1 indicate lower-than-average modeled risk; values above 1 indicate higher-than-average modeled risk.",
+            style = "color: var(--muted);"
+          ),
+          plotOutput("risk_gauge_plot", height = "220px"),
+          textOutput("risk_label"),
+          uiOutput("risk_overview")
+        ),
+        tabPanel(
+          title = tags$span("Geographic Trends", class = "tab-fatality tab-fatality-data"),
+          value = "geographic_trends",
+          h3("Geographic Trends"),
+          tags$p(
+            "Compare your selected geography with national averages and similarly populated states. Metrics use population density, housing density, percent elderly, poverty rate, no-vehicle rate, and FEMA disaster exposure.",
+            style = "color: var(--muted);"
+          ),
+          tableOutput("benchmark_table"),
+          h3("Annual Fatalities per 100k (Map)"),
+          plotlyOutput("benchmark_map", height = "360px"),
+          tags$div(
+            class = "card",
+            tags$div(class = "card-title", "Highest Annual Fatality Rates (per 100k)"),
+            tableOutput("benchmark_top_states")
+          ),
+          tags$div(
+            class = "card",
+            tags$div(class = "card-title", "Highest Disaster Exposure (per 100k)"),
+            tableOutput("benchmark_top_disasters")
+          )
+        ),,
           tags$div(
             class = "btn-inline",
             actionButton("generate_training", "Generate Training Plan"),
