@@ -8,6 +8,7 @@ library(lubridate)
 library(httr)
 library(jsonlite)
 library(xml2)
+library(maps)
 
 # ---- Configuration ----
 data_path <- "/Users/amyfulton/Downloads/ff_data.csv"
@@ -1068,6 +1069,43 @@ ui <- fluidPage(
     mainPanel(
       class = "main",
       tabsetPanel(
+        tabPanel(
+          title = tags$span("Welcome", class = "tab-fatality"),
+          h3("Fire Department Preparedness Dashboard"),
+          tags$p(
+            "A decision-support dashboard for fire department leadership that turns national fatality data into practical prevention and preparedness guidance.",
+            style = "color: var(--muted);"
+          ),
+          tags$div(
+            class = "card",
+            tags$div(class = "card-title", "Who This Is For"),
+            tags$ul(
+              tags$li("Fire chiefs and command staff"),
+              tags$li("Training officers and safety committees"),
+              tags$li("Volunteer and career department leadership")
+            )
+          ),
+          tags$div(
+            class = "card",
+            tags$div(class = "card-title", "Core Capabilities"),
+            tags$ul(
+              tags$li("Regional fatality risk summaries and trends"),
+              tags$li("Personnel-specific risk patterns"),
+              tags$li("LLM-generated prevention guidance and training plans"),
+              tags$li("Disaster preparedness guidance using Census + FEMA context")
+            )
+          ),
+          tags$div(
+            class = "card",
+            tags$div(class = "card-title", "How To Use It"),
+            tags$ul(
+              tags$li("Select your region/state and department makeup."),
+              tags$li("Choose incident types your department responds to."),
+              tags$li("Review the risk summaries and benchmarking tabs."),
+              tags$li("Generate prevention guidance and a 12-month training plan.")
+            )
+          )
+        ),
         tags$li(class = "tab-divider", tags$a("Fatality Risk & Minimization", href = "#")),
         tabPanel(
           title = tags$span("Regional Risks", class = "tab-fatality"),
@@ -1264,7 +1302,19 @@ ui <- fluidPage(
             "Compare your selected geography with national averages and similarly populated states. Metrics use population density, housing density, percent elderly, poverty rate, no-vehicle rate, and FEMA disaster exposure.",
             style = "color: var(--muted);"
           ),
-          tableOutput("benchmark_table")
+          tableOutput("benchmark_table"),
+          h3("Fatality Risk Map (per 100k)"),
+          plotOutput("benchmark_map", height = "360px"),
+          tags$div(
+            class = "card",
+            tags$div(class = "card-title", "Highest Fatality Rates (per 100k)"),
+            tableOutput("benchmark_top_states")
+          ),
+          tags$div(
+            class = "card",
+            tags$div(class = "card-title", "Highest Disaster Exposure (per 100k)"),
+            tableOutput("benchmark_top_disasters")
+          )
         ),
         tabPanel(
           title = tags$span("Disaster Risk & Preparedness", class = "tab-disaster"),
@@ -1884,6 +1934,75 @@ server <- function(input, output, session) {
     }
 
     table
+  })
+
+  benchmark_map_data <- reactive({
+    data <- model_data()
+    if (is.null(data)) return(NULL)
+
+    state_lookup <- tibble(
+      state = state.abb,
+      state_name = tolower(state.name)
+    )
+
+    data <- data %>%
+      left_join(state_lookup, by = "state") %>%
+      mutate(state_name = ifelse(state == "DC", "district of columbia", state_name))
+
+    map_df <- map_data("state")
+    map_df %>% left_join(data, by = c("region" = "state_name"))
+  })
+
+  output$benchmark_map <- renderPlot({
+    df <- benchmark_map_data()
+    if (is.null(df)) return(NULL)
+
+    ggplot(df, aes(long, lat, group = group, fill = deaths_per_100k)) +
+      geom_polygon(color = "#2a2a2f", size = 0.2) +
+      scale_fill_gradient(
+        low = "#1c1c1f",
+        high = "#ff6a00",
+        na.value = "#2a2a2f"
+      ) +
+      coord_fixed(1.3) +
+      theme_void(base_family = "Source Sans 3") +
+      theme(
+        legend.position = "right",
+        legend.title = element_text(color = "#f7f3ef"),
+        legend.text = element_text(color = "#c7c0b8"),
+        plot.background = element_rect(fill = "transparent", color = NA),
+        panel.background = element_rect(fill = "transparent", color = NA)
+      ) +
+      labs(fill = "Fatalities\nper 100k")
+  })
+
+  output$benchmark_top_states <- renderTable({
+    data <- model_data()
+    if (is.null(data)) return(NULL)
+
+    data %>%
+      filter(!is.na(deaths_per_100k)) %>%
+      arrange(desc(deaths_per_100k)) %>%
+      slice_head(n = 10) %>%
+      transmute(
+        State = state,
+        `Fatalities per 100k` = round(deaths_per_100k, 2)
+      )
+  })
+
+  output$benchmark_top_disasters <- renderTable({
+    data <- model_data()
+    if (is.null(data)) return(NULL)
+
+    data %>%
+      mutate(disasters_per_100k = ifelse(population > 0, (disaster_count / population) * 100000, NA_real_)) %>%
+      filter(!is.na(disasters_per_100k)) %>%
+      arrange(desc(disasters_per_100k)) %>%
+      slice_head(n = 10) %>%
+      transmute(
+        State = state,
+        `Disasters per 100k` = round(disasters_per_100k, 2)
+      )
   })
 
   output$last_refreshed <- renderText({
