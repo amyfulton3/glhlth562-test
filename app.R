@@ -1144,7 +1144,6 @@ ui <- fluidPage(
             )
           )
         ),
-        tags$li(class = "tab-divider", tags$a("Fatality Risk & Minimization", href = "#")),
         tabPanel(
           title = tags$span("Regional Risk Profile", class = "tab-fatality"),
           value = "regional_profile",
@@ -1339,7 +1338,6 @@ ui <- fluidPage(
           textOutput("profile_status"),
           uiOutput("profile_analysis")
         ),
-        tags$li(class = "tab-divider disaster", tags$a("Disaster Preparedness", href = "#")),
         tabPanel(
           title = tags$span("Disaster Risk Gauge", class = "tab-disaster"),
           value = "disaster_gauge",
