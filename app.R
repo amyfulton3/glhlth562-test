@@ -1244,26 +1244,6 @@ ui <- fluidPage(
           uiOutput("reports_analysis")
         ),
         tabPanel(
-          title = tags$span("Training Plan", class = "tab-fatality tab-fatality-plans"),
-          value = "training_plan",
-          h3("Monthly Training Plan"),
-          tags$p(
-            "Generates a 12-month training plan based on your department characteristics and historical fatality trends.",
-            style = "color: var(--muted);"
-          ),
-          checkboxGroupInput(
-            "training_equipment",
-            "Available Training Equipment",
-            choices = c(
-              "Forcible Entry Props",
-              "Live-Fire Props",
-              "Search and Rescue",
-              "Hose/Nozzle Handling",
-              "Ventilation Tools",
-              "Physical Conditioning Equipment"
-            )
-          ),
-        tabPanel(
           title = tags$span("Fatality Risk Gauge", class = "tab-fatality tab-fatality-data"),
           value = "fatality_gauge",
           h3("Fatality Risk Gauge"),
@@ -1313,6 +1293,26 @@ ui <- fluidPage(
             tableOutput("benchmark_top_disasters")
           )
         ),
+        tabPanel(
+          title = tags$span("Training Plan", class = "tab-fatality tab-fatality-plans"),
+          value = "training_plan",
+          h3("Monthly Training Plan"),
+          tags$p(
+            "Generates a 12-month training plan based on your department characteristics and historical fatality trends.",
+            style = "color: var(--muted);"
+          ),
+          checkboxGroupInput(
+            "training_equipment",
+            "Available Training Equipment",
+            choices = c(
+              "Forcible Entry Props",
+              "Live-Fire Props",
+              "Search and Rescue",
+              "Hose/Nozzle Handling",
+              "Ventilation Tools",
+              "Physical Conditioning Equipment"
+            )
+          ),
           tags$div(
             class = "btn-inline",
             actionButton("generate_training", "Generate Training Plan"),
