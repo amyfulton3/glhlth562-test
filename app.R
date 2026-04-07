@@ -949,11 +949,16 @@ ui <- fluidPage(
       .link-plans a, .link-plans { color: #ff8a5b !important; }
       .link-individual a, .link-individual { color: #ff6f3d !important; }
       .link-disaster a, .link-disaster { color: #e18a0a !important; }
+      .link-fatality strong, .link-plans strong, .link-individual strong, .link-disaster strong { color: #ffffff; }
       .link-fatality a:hover, .link-plans a:hover, .link-individual a:hover, .link-disaster a:hover { filter: brightness(1.1); }
       .tab-fatality-data { color: #ffb347; }
       .tab-fatality-plans { color: #ff8a5b; }
       .tab-fatality-individual { color: #ff6f3d; }
       .tab-disaster { color: #e18a0a; }
+      .nav-tabs > li > a .tab-fatality-data { color: #ffb347; }
+      .nav-tabs > li > a .tab-fatality-plans { color: #ff8a5b; }
+      .nav-tabs > li > a .tab-fatality-individual { color: #ff6f3d; }
+      .nav-tabs > li > a .tab-disaster { color: #e18a0a; }
       table { color: var(--text); }
       .shiny-output-error-validation { color: #ffb347; }
       .info-box { background: #101012; border: 1px dashed #333; padding: 10px; border-radius: 10px; margin-top: 10px; }
