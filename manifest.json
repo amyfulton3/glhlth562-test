@@ -12,7 +12,7 @@
   "packages": {
     "R6": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "R6",
         "Title": "Encapsulated Classes with Reference Semantics",
@@ -39,7 +39,7 @@
     },
     "RColorBrewer": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "RColorBrewer",
         "Version": "1.1-3",
@@ -60,7 +60,7 @@
     },
     "Rcpp": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "Rcpp",
         "Title": "Seamless R and C++ Integration",
@@ -88,7 +88,7 @@
     },
     "S7": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "S7",
         "Title": "An Object Oriented System Meant to Become a Successor to S3 and\nS4",
@@ -121,7 +121,7 @@
     },
     "askpass": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "askpass",
         "Type": "Package",
@@ -149,7 +149,7 @@
     },
     "base64enc": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "base64enc",
         "Version": "0.1-3",
@@ -171,7 +171,7 @@
     },
     "bit": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "bit",
         "Title": "Classes and Methods for Fast Memory-Efficient Boolean Selections",
@@ -200,7 +200,7 @@
     },
     "bit64": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "bit64",
         "Title": "A S3 Class for Vectors of 64bit Integers",
@@ -230,7 +230,7 @@
     },
     "bslib": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "bslib",
         "Title": "Custom 'Bootstrap' 'Sass' Themes for 'shiny' and 'rmarkdown'",
@@ -263,7 +263,7 @@
     },
     "cachem": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "cachem",
         "Version": "1.1.0",
@@ -291,7 +291,7 @@
     },
     "cli": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "cli",
         "Title": "Helpers for Developing Command Line Interfaces",
@@ -320,7 +320,7 @@
     },
     "clipr": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Type": "Package",
         "Package": "clipr",
@@ -349,7 +349,7 @@
     },
     "commonmark": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "commonmark",
         "Type": "Package",
@@ -376,7 +376,7 @@
     },
     "cpp11": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "cpp11",
         "Title": "A C++11 Interface for R's C Interface",
@@ -405,7 +405,7 @@
     },
     "crayon": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "crayon",
         "Title": "Colored Terminal Output",
@@ -432,7 +432,7 @@
     },
     "curl": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "curl",
         "Type": "Package",
@@ -462,7 +462,7 @@
     },
     "digest": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "digest",
         "Authors@R": "c(person(\"Dirk\", \"Eddelbuettel\", role = c(\"aut\", \"cre\"), email = \"edd@debian.org\",\n                    comment = c(ORCID = \"0000-0001-6419-907X\")),\n             person(\"Antoine\", \"Lucas\", role=\"ctb\"),\n             person(\"Jarek\", \"Tuszynski\", role=\"ctb\"),\n             person(\"Henrik\", \"Bengtsson\", role=\"ctb\", comment = c(ORCID = \"0000-0002-7579-5165\")),\n             person(\"Simon\", \"Urbanek\", role=\"ctb\", comment = c(ORCID = \"0000-0003-2297-1732\")),\n             person(\"Mario\", \"Frasca\", role=\"ctb\"),\n             person(\"Bryan\", \"Lewis\", role=\"ctb\"),\n             person(\"Murray\", \"Stokely\", role=\"ctb\"),\n             person(\"Hannes\", \"Muehleisen\", role=\"ctb\"),\n             person(\"Duncan\", \"Murdoch\", role=\"ctb\"),\n             person(\"Jim\", \"Hester\", role=\"ctb\"),\n             person(\"Wush\", \"Wu\", role=\"ctb\", comment = c(ORCID = \"0000-0001-5180-0567\")),\n             person(\"Qiang\", \"Kou\", role=\"ctb\", comment = c(ORCID = \"0000-0001-6786-5453\")),\n             person(\"Thierry\", \"Onkelinx\", role=\"ctb\", comment = c(ORCID = \"0000-0001-8804-4216\")),\n             person(\"Michel\", \"Lang\", role=\"ctb\", comment = c(ORCID = \"0000-0001-9754-0393\")),\n             person(\"Viliam\", \"Simko\", role=\"ctb\"),\n             person(\"Kurt\", \"Hornik\", role=\"ctb\", comment = c(ORCID = \"0000-0003-4198-9911\")),\n             person(\"Radford\", \"Neal\", role=\"ctb\", comment = c(ORCID = \"0000-0002-2473-3407\")),\n             person(\"Kendon\", \"Bell\", role=\"ctb\", comment = c(ORCID = \"0000-0002-9093-8312\")),\n             person(\"Matthew\", \"de Queljoe\", role=\"ctb\"),\n             person(\"Dmitry\", \"Selivanov\", role=\"ctb\"),\n             person(\"Ion\", \"Suruceanu\", role=\"ctb\"),\n             person(\"Bill\", \"Denney\", role=\"ctb\"),\n             person(\"Dirk\", \"Schumacher\", role=\"ctb\"),\n             person(\"András\", \"Svraka\", role=\"ctb\"),\n             person(\"Sergey\", \"Fedorov\", role=\"ctb\"),\n             person(\"Will\", \"Landau\", role=\"ctb\", comment = c(ORCID = \"0000-0003-1878-3253\")),\n             person(\"Floris\", \"Vanderhaeghe\", role=\"ctb\", comment = c(ORCID = \"0000-0002-6378-6229\")),\n             person(\"Kevin\", \"Tappe\", role=\"ctb\"),\n             person(\"Harris\", \"McGehee\", role=\"ctb\"),\n             person(\"Tim\", \"Mastny\", role=\"ctb\"),\n             person(\"Aaron\", \"Peikert\", role=\"ctb\", comment = c(ORCID = \"0000-0001-7813-818X\")),\n             person(\"Mark\", \"van der Loo\", role=\"ctb\", comment = c(ORCID = \"0000-0002-9807-4686\")),\n             person(\"Chris\", \"Muir\", role=\"ctb\", comment = c(ORCID = \"0000-0003-2555-3878\")),\n             person(\"Moritz\", \"Beller\", role=\"ctb\", comment = c(ORCID = \"0000-0003-4852-0526\")),\n             person(\"Sebastian\", \"Campbell\", role=\"ctb\"),\n             person(\"Winston\", \"Chang\", role=\"ctb\", comment = c(ORCID = \"0000-0002-1576-2126\")),\n             person(\"Dean\", \"Attali\", role=\"ctb\", comment = c(ORCID = \"0000-0002-5645-3493\")),\n             person(\"Michael\", \"Chirico\", role=\"ctb\", comment = c(ORCID = \"0000-0003-0787-087X\")),\n             person(\"Kevin\", \"Ushey\", role=\"ctb\"))",
@@ -490,7 +490,7 @@
     },
     "dplyr": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Type": "Package",
         "Package": "dplyr",
@@ -522,7 +522,7 @@
     },
     "farver": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Type": "Package",
         "Package": "farver",
@@ -549,7 +549,7 @@
     },
     "fastmap": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "fastmap",
         "Title": "Fast Data Structures",
@@ -574,7 +574,7 @@
     },
     "fontawesome": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Type": "Package",
         "Package": "fontawesome",
@@ -603,7 +603,7 @@
     },
     "fs": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "fs",
         "Title": "Cross-Platform File System Operations Based on 'libuv'",
@@ -637,7 +637,7 @@
     },
     "generics": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "generics",
         "Title": "Common S3 Generics not Provided by Base R Methods Related to\nModel Fitting",
@@ -665,7 +665,7 @@
     },
     "ggplot2": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "ggplot2",
         "Title": "Create Elegant Data Visualisations Using the Grammar of Graphics",
@@ -698,7 +698,7 @@
     },
     "glue": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "glue",
         "Title": "Interpreted String Literals",
@@ -729,7 +729,7 @@
     },
     "gtable": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "gtable",
         "Title": "Arrange 'Grobs' in Tables",
@@ -759,7 +759,7 @@
     },
     "hms": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "hms",
         "Title": "Pretty Time of Day",
@@ -789,7 +789,7 @@
     },
     "htmltools": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Type": "Package",
         "Package": "htmltools",
@@ -821,7 +821,7 @@
     },
     "httpuv": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Type": "Package",
         "Package": "httpuv",
@@ -852,7 +852,7 @@
     },
     "httr": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "httr",
         "Title": "Tools for Working with URLs and HTTP",
@@ -880,7 +880,7 @@
     },
     "isoband": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "isoband",
         "Title": "Generate Isolines and Isobands from Regularly Spaced Elevation\nGrids",
@@ -910,7 +910,7 @@
     },
     "jquerylib": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "jquerylib",
         "Title": "Obtain 'jQuery' as an HTML Dependency Object",
@@ -934,7 +934,7 @@
     },
     "jsonlite": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "jsonlite",
         "Version": "2.0.0",
@@ -961,7 +961,7 @@
     },
     "labeling": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "labeling",
         "Type": "Package",
@@ -983,7 +983,7 @@
     },
     "later": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Type": "Package",
         "Package": "later",
@@ -1017,7 +1017,7 @@
     },
     "lifecycle": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "lifecycle",
         "Title": "Manage the Life Cycle of your Package Functions",
@@ -1046,7 +1046,7 @@
     },
     "lubridate": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Type": "Package",
         "Package": "lubridate",
@@ -1081,7 +1081,7 @@
     },
     "magrittr": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Type": "Package",
         "Package": "magrittr",
@@ -1109,9 +1109,36 @@
         "Archs": "magrittr.so.dSYM"
       }
     },
+    "maps": {
+      "Source": "CRAN",
+      "Repository": "https://cloud.r-project.org",
+      "description": {
+        "Package": "maps",
+        "Title": "Draw Geographical Maps",
+        "Version": "3.4.3",
+        "Date": "2025-05-15",
+        "Description": "Display of maps.  Projection code and larger maps are in\n             separate packages ('mapproj' and 'mapdata').",
+        "Depends": "R (>= 3.5.0)",
+        "Imports": "graphics, utils",
+        "LazyData": "yes",
+        "Suggests": "mapproj (>= 1.2-0), mapdata (>= 2.3.0), sf, rnaturalearth",
+        "License": "GPL-2",
+        "URL": "https://github.com/adeckmyn/maps",
+        "BugReports": "https://github.com/adeckmyn/maps/issues",
+        "Authors@R": "c(person(given  = c(\"Richard\", \"A.\"),\n                    family = \"Becker\",\n                    role   = \"aut\",\n                    comment= \"Original S code\"),\n             person(given  = c(\"Allan\", \"R.\"),\n                    family = \"Wilks\",\n                    role   = \"aut\",\n                    comment= \"Original S code\"),\n             person(given  = \"Ray\",\n                    family = \"Brownrigg\",\n                    role   = c(\"trl\", \"aut\"),\n                    comment= \"R version\"),\n             person(given  = c(\"Thomas\", \"P.\"),\n                    family = \"Minka\",\n                    role   = \"aut\",\n                    comment= \"Enhancements\"),\n             person(given  = \"Alex\",\n                    family = \"Deckmyn\",\n                    role   = c(\"aut\", \"cre\"),\n                    comment= c(ORCID=\"0009-0002-2010-8310\"),\n                    email  = \"alex.deckmyn@meteo.be\"))",
+        "NeedsCompilation": "yes",
+        "Repository": "CRAN",
+        "Packaged": "2025-05-19 08:35:55 UTC; alex",
+        "Author": "Richard A. Becker [aut] (Original S code),\n  Allan R. Wilks [aut] (Original S code),\n  Ray Brownrigg [trl, aut] (R version),\n  Thomas P. Minka [aut] (Enhancements),\n  Alex Deckmyn [aut, cre] (ORCID:\n    <https://orcid.org/0009-0002-2010-8310>)",
+        "Maintainer": "Alex Deckmyn <alex.deckmyn@meteo.be>",
+        "Date/Publication": "2025-05-26 17:40:02 UTC",
+        "Built": "R 4.5.0; aarch64-apple-darwin20; 2025-05-26 19:14:06 UTC; unix",
+        "Archs": "maps.so.dSYM"
+      }
+    },
     "memoise": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "memoise",
         "Title": "'Memoisation' of Functions",
@@ -1136,7 +1163,7 @@
     },
     "mime": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "mime",
         "Type": "Package",
@@ -1162,7 +1189,7 @@
     },
     "openssl": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "openssl",
         "Type": "Package",
@@ -1191,7 +1218,7 @@
     },
     "otel": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "otel",
         "Title": "OpenTelemetry R API",
@@ -1219,7 +1246,7 @@
     },
     "pillar": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "pillar",
         "Title": "Coloured Formatting for Columns",
@@ -1252,7 +1279,7 @@
     },
     "pkgconfig": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "pkgconfig",
         "Title": "Private Configuration for 'R' Packages",
@@ -1276,7 +1303,7 @@
     },
     "prettyunits": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "prettyunits",
         "Title": "Pretty, Human Readable Formatting of Quantities",
@@ -1301,7 +1328,7 @@
     },
     "progress": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "progress",
         "Title": "Terminal Progress Bars",
@@ -1329,7 +1356,7 @@
     },
     "promises": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Type": "Package",
         "Package": "promises",
@@ -1361,7 +1388,7 @@
     },
     "rappdirs": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Type": "Package",
         "Package": "rappdirs",
@@ -1390,7 +1417,7 @@
     },
     "readr": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "readr",
         "Title": "Read Rectangular Text Data",
@@ -1423,7 +1450,7 @@
     },
     "rlang": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "rlang",
         "Version": "1.1.6",
@@ -1456,7 +1483,7 @@
     },
     "sass": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Type": "Package",
         "Package": "sass",
@@ -1486,7 +1513,7 @@
     },
     "scales": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "scales",
         "Title": "Scale Functions for Visualization",
@@ -1516,7 +1543,7 @@
     },
     "shiny": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Type": "Package",
         "Package": "shiny",
@@ -1546,7 +1573,7 @@
     },
     "sourcetools": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "sourcetools",
         "Type": "Package",
@@ -1571,7 +1598,7 @@
     },
     "stringi": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "stringi",
         "Version": "1.8.7",
@@ -1601,7 +1628,7 @@
     },
     "stringr": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "stringr",
         "Title": "Simple, Consistent Wrappers for Common String Operations",
@@ -1631,7 +1658,7 @@
     },
     "sys": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "sys",
         "Type": "Package",
@@ -1658,7 +1685,7 @@
     },
     "tibble": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "tibble",
         "Title": "Simple Data Frames",
@@ -1693,7 +1720,7 @@
     },
     "tidyselect": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "tidyselect",
         "Title": "Select from a Set of Strings",
@@ -1723,7 +1750,7 @@
     },
     "timechange": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "timechange",
         "Title": "Efficient Manipulation of Date-Times",
@@ -1751,7 +1778,7 @@
     },
     "tzdb": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "tzdb",
         "Title": "Time Zone Database Information",
@@ -1781,7 +1808,7 @@
     },
     "utf8": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "utf8",
         "Title": "Unicode Text Processing",
@@ -1809,7 +1836,7 @@
     },
     "vctrs": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "vctrs",
         "Title": "Vector Helpers",
@@ -1840,7 +1867,7 @@
     },
     "viridisLite": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "viridisLite",
         "Type": "Package",
@@ -1867,7 +1894,7 @@
     },
     "vroom": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "vroom",
         "Title": "Read and Write Rectangular Text Data Quickly",
@@ -1902,7 +1929,7 @@
     },
     "withr": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "withr",
         "Title": "Run Code 'With' Temporarily Modified Global State",
@@ -1932,7 +1959,7 @@
     },
     "xml2": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "xml2",
         "Title": "Parse XML",
@@ -1964,7 +1991,7 @@
     },
     "xtable": {
       "Source": "CRAN",
-      "Repository": null,
+      "Repository": "https://cloud.r-project.org",
       "description": {
         "Package": "xtable",
         "Version": "1.8-4",
@@ -1996,7 +2023,7 @@
       "checksum": "56b2c4489abd5842a5e12d481bed5778"
     },
     "app.R": {
-      "checksum": "cb201f20a4aed8aecfa95da4284ac165"
+      "checksum": "7b12ea325d8114a6b4613f0e3a4bad59"
     },
     "data/fatalities.csv": {
       "checksum": "9b43d140df8525f5fe7b7ab7b5866c37"
@@ -2007,8 +2034,242 @@
     "data/sample_fatalities.csv": {
       "checksum": "0c7bf11e659399d198fe28971b7fee2b"
     },
+    "deck/assets/helmet.svg": {
+      "checksum": "b3e6432241108029917d75b35bab9d0f"
+    },
+    "deck/assets/thankyou1.jpg": {
+      "checksum": "bd2e5a1950c7dc07d4ed50e69ae059b8"
+    },
+    "deck/assets/thankyou2.jpg": {
+      "checksum": "73ba4d8e678aaaa2989e01a456a35ad2"
+    },
+    "deck/assets/thankyou3.jpg": {
+      "checksum": "53dea5de0946cfdd7c9c0f9ea0117f14"
+    },
+    "deck/presentation_files/libs/clipboard/clipboard.min.js": {
+      "checksum": "15f52a1ee547f2bdd46e56747332ca2d"
+    },
+    "deck/presentation_files/libs/quarto-html/light-border.css": {
+      "checksum": "0b646459f2ef479b718a65b2157c44e4"
+    },
+    "deck/presentation_files/libs/quarto-html/popper.min.js": {
+      "checksum": "3a4a291ccf3f1ea0f82b641542fd3827"
+    },
+    "deck/presentation_files/libs/quarto-html/quarto-syntax-highlighting-2f5df379a58b258e96c21c0638c20c03.css": {
+      "checksum": "2f5df379a58b258e96c21c0638c20c03"
+    },
+    "deck/presentation_files/libs/quarto-html/tabby.min.js": {
+      "checksum": "c4219bb6375131a945d7e4bfc49c5f35"
+    },
+    "deck/presentation_files/libs/quarto-html/tippy.css": {
+      "checksum": "ebd6f8ce46a677e1a4f5f8a8317109a9"
+    },
+    "deck/presentation_files/libs/quarto-html/tippy.umd.min.js": {
+      "checksum": "d828775275749701b48bd9d958814111"
+    },
+    "deck/presentation_files/libs/revealjs/dist/reset.css": {
+      "checksum": "4042c1a43777d540673cabc97cec67b2"
+    },
+    "deck/presentation_files/libs/revealjs/dist/reveal.css": {
+      "checksum": "63603931663126b2803c8d50c5ec50a5"
+    },
+    "deck/presentation_files/libs/revealjs/dist/reveal.esm.js": {
+      "checksum": "5d1b951e8804804eea44b7a50cf46be6"
+    },
+    "deck/presentation_files/libs/revealjs/dist/reveal.esm.js.map": {
+      "checksum": "9d584b1cffa4cd297219f11a3b41baa4"
+    },
+    "deck/presentation_files/libs/revealjs/dist/reveal.js": {
+      "checksum": "eca5d46a877fcf34cdad307d63755cc2"
+    },
+    "deck/presentation_files/libs/revealjs/dist/reveal.js.map": {
+      "checksum": "dfd3ae7706b60dd68619d7415c5bb47c"
+    },
+    "deck/presentation_files/libs/revealjs/dist/theme/fonts/league-gothic/league-gothic.css": {
+      "checksum": "488966d15e97f072801d7e348f4b5141"
+    },
+    "deck/presentation_files/libs/revealjs/dist/theme/fonts/league-gothic/league-gothic.eot": {
+      "checksum": "9900a4643cc63c5d8f969d2196f72572"
+    },
+    "deck/presentation_files/libs/revealjs/dist/theme/fonts/league-gothic/league-gothic.ttf": {
+      "checksum": "91295fa87df918411b49b7531da5d558"
+    },
+    "deck/presentation_files/libs/revealjs/dist/theme/fonts/league-gothic/league-gothic.woff": {
+      "checksum": "cd382dc8a9d6317864b5810a320effc5"
+    },
+    "deck/presentation_files/libs/revealjs/dist/theme/fonts/league-gothic/LICENSE": {
+      "checksum": "8fac5842e2f5a2e6bc067f5beb5035c9"
+    },
+    "deck/presentation_files/libs/revealjs/dist/theme/fonts/source-sans-pro/LICENSE": {
+      "checksum": "8ea3e41b02e9f465515dad7c89459c5b"
+    },
+    "deck/presentation_files/libs/revealjs/dist/theme/fonts/source-sans-pro/source-sans-pro-italic.eot": {
+      "checksum": "72217712eb8d28872e7069322f3fda23"
+    },
+    "deck/presentation_files/libs/revealjs/dist/theme/fonts/source-sans-pro/source-sans-pro-italic.ttf": {
+      "checksum": "8256cfd7e4017a7690814879409212cd"
+    },
+    "deck/presentation_files/libs/revealjs/dist/theme/fonts/source-sans-pro/source-sans-pro-italic.woff": {
+      "checksum": "e74f0128884561828ce8c9cf5c284ab8"
+    },
+    "deck/presentation_files/libs/revealjs/dist/theme/fonts/source-sans-pro/source-sans-pro-regular.eot": {
+      "checksum": "1d71438462d532b62b05cdd7e6d7197d"
+    },
+    "deck/presentation_files/libs/revealjs/dist/theme/fonts/source-sans-pro/source-sans-pro-regular.ttf": {
+      "checksum": "2da39ecf9246383937da11b44b7bd9b4"
+    },
+    "deck/presentation_files/libs/revealjs/dist/theme/fonts/source-sans-pro/source-sans-pro-regular.woff": {
+      "checksum": "e7acc589bb558fe58936a853f570193c"
+    },
+    "deck/presentation_files/libs/revealjs/dist/theme/fonts/source-sans-pro/source-sans-pro-semibold.eot": {
+      "checksum": "0f3da1edf1b5c6a94a6ad948a7664451"
+    },
+    "deck/presentation_files/libs/revealjs/dist/theme/fonts/source-sans-pro/source-sans-pro-semibold.ttf": {
+      "checksum": "f3565095e6c9158140444970f5a2c5ed"
+    },
+    "deck/presentation_files/libs/revealjs/dist/theme/fonts/source-sans-pro/source-sans-pro-semibold.woff": {
+      "checksum": "1cb8e94f1185f1131a0c895165998f2b"
+    },
+    "deck/presentation_files/libs/revealjs/dist/theme/fonts/source-sans-pro/source-sans-pro-semibolditalic.eot": {
+      "checksum": "58153ac7194e141d1e73ea88c6b63861"
+    },
+    "deck/presentation_files/libs/revealjs/dist/theme/fonts/source-sans-pro/source-sans-pro-semibolditalic.ttf": {
+      "checksum": "c7e698a4d0956f4a939f42a05685bbf5"
+    },
+    "deck/presentation_files/libs/revealjs/dist/theme/fonts/source-sans-pro/source-sans-pro-semibolditalic.woff": {
+      "checksum": "6b058fc2634b01d837c3432316c3141f"
+    },
+    "deck/presentation_files/libs/revealjs/dist/theme/fonts/source-sans-pro/source-sans-pro.css": {
+      "checksum": "b4b58710f05264a4011912211d0a9eed"
+    },
+    "deck/presentation_files/libs/revealjs/dist/theme/quarto-8f3eebe07241f08526c91a7e9cbef8fd.css": {
+      "checksum": "8f3eebe07241f08526c91a7e9cbef8fd"
+    },
+    "deck/presentation_files/libs/revealjs/plugin/highlight/highlight.esm.js": {
+      "checksum": "19a0f6f1a902d2ef9aaefa1e046b3b2e"
+    },
+    "deck/presentation_files/libs/revealjs/plugin/highlight/highlight.js": {
+      "checksum": "bebce5c694268a3f8dff84a58b270ba3"
+    },
+    "deck/presentation_files/libs/revealjs/plugin/highlight/monokai.css": {
+      "checksum": "8c43a819e1268fc57605f500adff816b"
+    },
+    "deck/presentation_files/libs/revealjs/plugin/highlight/plugin.js": {
+      "checksum": "df2b6cec81d1c3d9730ef2b9421f62a1"
+    },
+    "deck/presentation_files/libs/revealjs/plugin/highlight/zenburn.css": {
+      "checksum": "28d5b9497037a12cb5a15644fea2f1c3"
+    },
+    "deck/presentation_files/libs/revealjs/plugin/markdown/markdown.esm.js": {
+      "checksum": "51cf543919182a054e69a3d632356296"
+    },
+    "deck/presentation_files/libs/revealjs/plugin/markdown/markdown.js": {
+      "checksum": "e19760d2cc93d38d5df00081a1893828"
+    },
+    "deck/presentation_files/libs/revealjs/plugin/markdown/plugin.js": {
+      "checksum": "a1da0411f474b5bc82d1cc79faf4d0c1"
+    },
+    "deck/presentation_files/libs/revealjs/plugin/math/katex.js": {
+      "checksum": "2a22abd1eb5a1c923f2d41178427715a"
+    },
+    "deck/presentation_files/libs/revealjs/plugin/math/math.esm.js": {
+      "checksum": "51b0b5e4a4dd80029ab90fb9ded6b67c"
+    },
+    "deck/presentation_files/libs/revealjs/plugin/math/math.js": {
+      "checksum": "744ade9a5dacddb69f35ee96cfd6f74a"
+    },
+    "deck/presentation_files/libs/revealjs/plugin/math/mathjax2.js": {
+      "checksum": "c1ea64afa05c3677d2c404755193b2be"
+    },
+    "deck/presentation_files/libs/revealjs/plugin/math/mathjax3.js": {
+      "checksum": "57d54e9c4fb748505b3709484593834a"
+    },
+    "deck/presentation_files/libs/revealjs/plugin/math/plugin.js": {
+      "checksum": "ec9cb99b85a8026d24b26526f6effe0d"
+    },
+    "deck/presentation_files/libs/revealjs/plugin/notes/notes.esm.js": {
+      "checksum": "e1d960e6895a06986c9509c30ba784b2"
+    },
+    "deck/presentation_files/libs/revealjs/plugin/notes/notes.js": {
+      "checksum": "db8fab48fe15b175ca69e99f8af2fdfc"
+    },
+    "deck/presentation_files/libs/revealjs/plugin/notes/plugin.js": {
+      "checksum": "9e52c9625a2f659373cc6e4c5ccf5b80"
+    },
+    "deck/presentation_files/libs/revealjs/plugin/notes/speaker-view.html": {
+      "checksum": "3e84d135161198849174057abe95b91c"
+    },
+    "deck/presentation_files/libs/revealjs/plugin/pdf-export/pdfexport.js": {
+      "checksum": "d851935da36e7b598d2d57764599f88b"
+    },
+    "deck/presentation_files/libs/revealjs/plugin/pdf-export/plugin.yml": {
+      "checksum": "76add7202812cd14a48ca57b96777de4"
+    },
+    "deck/presentation_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.css": {
+      "checksum": "4ba6b644b711bc2fc89389d78209da6d"
+    },
+    "deck/presentation_files/libs/revealjs/plugin/quarto-line-highlight/line-highlight.js": {
+      "checksum": "51cc37b684f5af8171d58269f6c18f07"
+    },
+    "deck/presentation_files/libs/revealjs/plugin/quarto-line-highlight/plugin.yml": {
+      "checksum": "4af9468c1cc516c6b54c12e686ba708f"
+    },
+    "deck/presentation_files/libs/revealjs/plugin/quarto-support/footer.css": {
+      "checksum": "b756f7eedcfd9b82421dd144f0ef7578"
+    },
+    "deck/presentation_files/libs/revealjs/plugin/quarto-support/plugin.yml": {
+      "checksum": "4f79b4a104bed30cd5b7b49d598bed88"
+    },
+    "deck/presentation_files/libs/revealjs/plugin/quarto-support/support.js": {
+      "checksum": "5e0f36c9d7561064a39a970bd13d710d"
+    },
+    "deck/presentation_files/libs/revealjs/plugin/reveal-menu/menu.css": {
+      "checksum": "1b9988f08dfe354c44e134304b3df8af"
+    },
+    "deck/presentation_files/libs/revealjs/plugin/reveal-menu/menu.js": {
+      "checksum": "8db4f7eb4ad5670e6be4bdf83c389ca2"
+    },
+    "deck/presentation_files/libs/revealjs/plugin/reveal-menu/plugin.yml": {
+      "checksum": "b949d3d3d5bdf5b5f508e6bfb328798e"
+    },
+    "deck/presentation_files/libs/revealjs/plugin/reveal-menu/quarto-menu.css": {
+      "checksum": "c8715037656f6595dbc3d9145fc7d8ac"
+    },
+    "deck/presentation_files/libs/revealjs/plugin/reveal-menu/quarto-menu.js": {
+      "checksum": "d7e0fadc3011a74b823d1bb5006ffa9b"
+    },
+    "deck/presentation_files/libs/revealjs/plugin/search/plugin.js": {
+      "checksum": "e39d5a868aff604a4bec144ae7a43c5b"
+    },
+    "deck/presentation_files/libs/revealjs/plugin/search/search.esm.js": {
+      "checksum": "1ff0e5fd23d9e0790498078f4acd37e8"
+    },
+    "deck/presentation_files/libs/revealjs/plugin/search/search.js": {
+      "checksum": "e265925ae6ee6ec778ed10ecba3c3da0"
+    },
+    "deck/presentation_files/libs/revealjs/plugin/zoom/plugin.js": {
+      "checksum": "75d50a8cac0d19f0824a1c5876d36673"
+    },
+    "deck/presentation_files/libs/revealjs/plugin/zoom/zoom.esm.js": {
+      "checksum": "c0a980f05da4f0bdd2ef6c8227fce9d3"
+    },
+    "deck/presentation_files/libs/revealjs/plugin/zoom/zoom.js": {
+      "checksum": "9c28a4d1f1502771665328f6abb091c0"
+    },
+    "deck/presentation.html": {
+      "checksum": "410bdc0bf96fab577aac5c9e2fee315b"
+    },
+    "deck/presentation.qmd": {
+      "checksum": "ed9bb46bcf3c386e33c25108b66b27d3"
+    },
+    "deck/theme.css": {
+      "checksum": "4b3c6de8ee159973183cbc593d2fa244"
+    },
+    "R/.gitkeep": {
+      "checksum": "d41d8cd98f00b204e9800998ecf8427e"
+    },
     "README.md": {
-      "checksum": "3b742d32280394773993282d8ea52271"
+      "checksum": "7f6d40181430795d2e2c36a10f659388"
     }
   },
   "users": null
