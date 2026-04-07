@@ -1181,6 +1181,7 @@ ui <- fluidPage(
           h3("Top Causes (Selected Filters)"),
           plotOutput("cause_plot", height = "260px")
         ),
+
         tabPanel(
           title = tags$span("Personnel", class = "tab-fatality tab-fatality-data"),
           value = "personnel",
@@ -1202,6 +1203,45 @@ ui <- fluidPage(
           ),
           plotOutput("duty_plot", height = "320px"),
           plotOutput("activity_plot", height = "520px")
+        ),
+        tabPanel(
+          title = tags$span("Prevention Guidance", class = "tab-fatality tab-fatality-plans"),
+          value = "prevention_guidance",
+          h3("Prevention Guidance"),
+          tags$p(
+            "Generate tailored prevention guidance based on your region, incident types, department makeup, and challenges.",
+            style = "color: var(--muted);"
+          ),
+          tags$div(
+            class = "btn-inline",
+            actionButton("run_llm", "Generate Prevention Guidance"),
+            conditionalPanel("output.guidance_busy == true", tags$span(class = "inline-spinner"))
+          ),
+          textOutput("guidance_status"),
+          uiOutput("guidance")
+        ),
+        tabPanel(
+          title = tags$span("Incident Reports", class = "tab-fatality tab-fatality-plans"),
+          value = "incident_reports",
+          h3("Incident Report Analysis"),
+          tags$p(
+            "Paste multiple incident reports below. The LLM will summarize key fatality risks and recommendations using historical trends.",
+            style = "color: var(--muted);"
+          ),
+          textAreaInput(
+            "incident_reports",
+            NULL,
+            placeholder = "Paste incident reports here (multiple reports are OK).",
+            width = "100%",
+            height = "180px"
+          ),
+          tags$div(
+            class = "btn-inline",
+            actionButton("analyze_reports", "Analyze Incident Reports"),
+            conditionalPanel("output.reports_busy == true", tags$span(class = "inline-spinner"))
+          ),
+          textOutput("reports_status"),
+          uiOutput("reports_analysis")
         ),
         tabPanel(
           title = tags$span("Fatality Risk Gauge", class = "tab-fatality tab-fatality-data"),
@@ -1254,45 +1294,6 @@ ui <- fluidPage(
           )
         ),
         tabPanel(
-          title = tags$span("Prevention Guidance", class = "tab-fatality tab-fatality-plans"),
-          value = "prevention_guidance",
-          h3("Prevention Guidance"),
-          tags$p(
-            "Generate tailored prevention guidance based on your region, incident types, department makeup, and challenges.",
-            style = "color: var(--muted);"
-          ),
-          tags$div(
-            class = "btn-inline",
-            actionButton("run_llm", "Generate Prevention Guidance"),
-            conditionalPanel("output.guidance_busy == true", tags$span(class = "inline-spinner"))
-          ),
-          textOutput("guidance_status"),
-          uiOutput("guidance")
-        ),
-        tabPanel(
-          title = tags$span("Incident Reports", class = "tab-fatality tab-fatality-plans"),
-          value = "incident_reports",
-          h3("Incident Report Analysis"),
-          tags$p(
-            "Paste multiple incident reports below. The LLM will summarize key fatality risks and recommendations using historical trends.",
-            style = "color: var(--muted);"
-          ),
-          textAreaInput(
-            "incident_reports",
-            NULL,
-            placeholder = "Paste incident reports here (multiple reports are OK).",
-            width = "100%",
-            height = "180px"
-          ),
-          tags$div(
-            class = "btn-inline",
-            actionButton("analyze_reports", "Analyze Incident Reports"),
-            conditionalPanel("output.reports_busy == true", tags$span(class = "inline-spinner"))
-          ),
-          textOutput("reports_status"),
-          uiOutput("reports_analysis")
-        ),
-        tabPanel(
           title = tags$span("Training Plan", class = "tab-fatality tab-fatality-plans"),
           value = "training_plan",
           h3("Monthly Training Plan"),
@@ -1331,38 +1332,6 @@ ui <- fluidPage(
             "Explore historical fatality patterns for firefighters who match your profile.",
             style = "color: var(--muted);"
           ),
-          selectInput(
-            "profile_age_range",
-            "Age Range",
-            choices = c("All", "20-29", "30-39", "40-49", "50-59", "60-69", "70+"),
-            selected = "All"
-          ),
-          selectInput("profile_role", "Role / Classification", choices = c("All")),
-          selectInput(
-            "profile_rank",
-            "Rank Category",
-            choices = c("All", "Firefighter/EMT", "Driver/Engineer", "Officer", "Chief/Command", "Specialist/Other")
-          ),
-          h3("Fatalities Over Time"),
-          plotOutput("profile_trend_plot", height = "260px"),
-          h3("Top Causes"),
-          plotOutput("profile_cause_plot", height = "260px"),
-          h3("Top Incident Types"),
-          plotOutput("profile_incident_plot", height = "260px"),
-          h3("Recent Incident Summary"),
-          tags$p(
-            "Summarize up to 10 of the most recent incident reports that match your profile (fewer if fewer are available).",
-            style = "color: var(--muted);"
-          ),
-          tags$div(
-            class = "btn-inline",
-            actionButton("profile_analyze", "Analyze Recent Reports"),
-            conditionalPanel("output.profile_busy == true", tags$span(class = "inline-spinner"))
-          ),
-          textOutput("profile_status"),
-          uiOutput("profile_analysis")
-        )
-,
           selectInput(
             "profile_age_range",
             "Age Range",
@@ -1440,6 +1409,7 @@ ui <- fluidPage(
       )
     )
   )
+)
 
 # ---- Server ----
 server <- function(input, output, session) {
