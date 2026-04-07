@@ -1204,22 +1204,6 @@ tabPanel(
           plotOutput("activity_plot", height = "520px")
         ),
 tabPanel(
-          title = tags$span("Prevention Guidance", class = "tab-fatality tab-fatality-plans"),
-          value = "prevention_guidance",
-          h3("Prevention Guidance"),
-          tags$p(
-            "Generate tailored prevention guidance based on your region, incident types, department makeup, and challenges.",
-            style = "color: var(--muted);"
-          ),
-          tags$div(
-            class = "btn-inline",
-            actionButton("run_llm", "Generate Prevention Guidance"),
-            conditionalPanel("output.guidance_busy == true", tags$span(class = "inline-spinner"))
-          ),
-          textOutput("guidance_status"),
-          uiOutput("guidance")
-        ),
-tabPanel(
           title = tags$span("Fatality Risk Gauge", class = "tab-fatality tab-fatality-data"),
           value = "fatality_gauge",
           h3("Fatality Risk Gauge"),
@@ -1268,6 +1252,22 @@ tabPanel(
             tags$div(class = "card-title", "Highest Disaster Exposure (per 100k)"),
             tableOutput("benchmark_top_disasters")
           )
+        ),
+tabPanel(
+          title = tags$span("Prevention Guidance", class = "tab-fatality tab-fatality-plans"),
+          value = "prevention_guidance",
+          h3("Prevention Guidance"),
+          tags$p(
+            "Generate tailored prevention guidance based on your region, incident types, department makeup, and challenges.",
+            style = "color: var(--muted);"
+          ),
+          tags$div(
+            class = "btn-inline",
+            actionButton("run_llm", "Generate Prevention Guidance"),
+            conditionalPanel("output.guidance_busy == true", tags$span(class = "inline-spinner"))
+          ),
+          textOutput("guidance_status"),
+          uiOutput("guidance")
         ),
 tabPanel(
           title = tags$span("Incident Report Analysis", class = "tab-fatality tab-fatality-plans"),
@@ -1405,6 +1405,19 @@ tabPanel(
           textOutput("disaster_status"),
           uiOutput("disaster_plan")
         )
+,
+          uiOutput("disaster_summary"),
+          h3("Top Disaster Types"),
+          tableOutput("disaster_types_table"),
+          h3("Preparedness Plan"),
+          tags$div(
+            class = "btn-inline",
+            actionButton("run_disaster_plan", "Generate Preparedness Plan"),
+            conditionalPanel("output.disaster_busy == true", tags$span(class = "inline-spinner"))
+          ),
+          textOutput("disaster_status"),
+          uiOutput("disaster_plan")
+        )
 
 
 ,
@@ -1422,7 +1435,6 @@ tabPanel(
         )
       )
     )
-  )
 # ---- Server ----
 server <- function(input, output, session) {
   data_state <- reactiveVal(get_data())
