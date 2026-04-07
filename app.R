@@ -945,6 +945,15 @@ ui <- fluidPage(
       .btn:hover { filter: brightness(1.05); }
       a { color: #ffb347; }
       a:hover { color: #ff6a00; }
+      .link-fatality a, .link-fatality { color: #ffb347 !important; }
+      .link-plans a, .link-plans { color: #ff8a5b !important; }
+      .link-individual a, .link-individual { color: #ff6f3d !important; }
+      .link-disaster a, .link-disaster { color: #e18a0a !important; }
+      .link-fatality a:hover, .link-plans a:hover, .link-individual a:hover, .link-disaster a:hover { filter: brightness(1.1); }
+      .tab-fatality-data { color: #ffb347; }
+      .tab-fatality-plans { color: #ff8a5b; }
+      .tab-fatality-individual { color: #ff6f3d; }
+      .tab-disaster { color: #e18a0a; }
       table { color: var(--text); }
       .shiny-output-error-validation { color: #ffb347; }
       .info-box { background: #101012; border: 1px dashed #333; padding: 10px; border-radius: 10px; margin-top: 10px; }
@@ -1117,6 +1126,7 @@ ui <- fluidPage(
             class = "card",
             tags$div(class = "card-title", "I would like to …"),
             tags$div(
+              class = "link-fatality",
               tags$strong("Explore fatality data:"),
               tags$ul(
                 tags$li(actionLink("go_regional_profile", "Explore historical trends in my region")),
@@ -1126,6 +1136,7 @@ ui <- fluidPage(
               )
             ),
             tags$div(
+              class = "link-plans",
               tags$strong("Develop plans for my department:"),
               tags$ul(
                 tags$li(actionLink("go_prevention", "Get tailored prevention guidance")),
@@ -1134,12 +1145,14 @@ ui <- fluidPage(
               )
             ),
             tags$div(
+              class = "link-individual",
               tags$strong("Understand causes of fatalities for firefighters like me:"),
               tags$ul(
                 tags$li(actionLink("go_individual", "Analyze fatality reports for firefighters matching my profile"))
               )
             ),
             tags$div(
+              class = "link-disaster",
               tags$strong("Plan for disasters:"),
               tags$ul(
                 tags$li(actionLink("go_disaster_gauge", "Understand my department’s disaster risk")),
@@ -1149,7 +1162,7 @@ ui <- fluidPage(
           )
         ),
         tabPanel(
-          title = tags$span("Regional Risk Profile", class = "tab-fatality"),
+          title = tags$span("Regional Risk Profile", class = "tab-fatality tab-fatality-data"),
           value = "regional_profile",
           h3("Fatality Risk Summary"),
           textOutput("risk_summary"),
@@ -1162,7 +1175,7 @@ ui <- fluidPage(
           plotOutput("cause_plot", height = "260px")
         ),
         tabPanel(
-          title = tags$span("Fatality Risk Gauge", class = "tab-fatality"),
+          title = tags$span("Fatality Risk Gauge", class = "tab-fatality tab-fatality-data"),
           value = "fatality_gauge",
           h3("Fatality Risk Gauge"),
           tags$p(
@@ -1190,7 +1203,7 @@ ui <- fluidPage(
           uiOutput("risk_overview")
         ),
         tabPanel(
-          title = tags$span("Geographic Trends", class = "tab-fatality"),
+          title = tags$span("Geographic Trends", class = "tab-fatality tab-fatality-data"),
           value = "geographic_trends",
           h3("Geographic Trends"),
           tags$p(
@@ -1212,7 +1225,7 @@ ui <- fluidPage(
           )
         ),
         tabPanel(
-          title = tags$span("Personnel", class = "tab-fatality"),
+          title = tags$span("Personnel", class = "tab-fatality tab-fatality-data"),
           value = "personnel",
           h3("Incident Type Odds by Personnel Type (Your Region)"),
           tags$p(
@@ -1234,7 +1247,7 @@ ui <- fluidPage(
           plotOutput("activity_plot", height = "520px")
         ),
         tabPanel(
-          title = tags$span("Prevention Guidance", class = "tab-fatality"),
+          title = tags$span("Prevention Guidance", class = "tab-fatality tab-fatality-plans"),
           value = "prevention_guidance",
           h3("Prevention Guidance"),
           tags$p(
@@ -1250,7 +1263,7 @@ ui <- fluidPage(
           uiOutput("guidance")
         ),
         tabPanel(
-          title = tags$span("Incident Reports", class = "tab-fatality"),
+          title = tags$span("Incident Reports", class = "tab-fatality tab-fatality-plans"),
           value = "incident_reports",
           h3("Incident Report Analysis"),
           tags$p(
@@ -1273,7 +1286,7 @@ ui <- fluidPage(
           uiOutput("reports_analysis")
         ),
         tabPanel(
-          title = tags$span("Training Plan", class = "tab-fatality"),
+          title = tags$span("Training Plan", class = "tab-fatality tab-fatality-plans"),
           value = "training_plan",
           h3("Monthly Training Plan"),
           tags$p(
@@ -1304,7 +1317,7 @@ ui <- fluidPage(
           textOutput("training_plan")
         ),
         tabPanel(
-          title = tags$span("Individual Guidance", class = "tab-fatality"),
+          title = tags$span("Individual Guidance", class = "tab-fatality tab-fatality-individual"),
           value = "individual_guidance",
           h3("Individualized Risk Profile"),
           tags$p(
