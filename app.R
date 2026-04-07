@@ -946,19 +946,21 @@ ui <- fluidPage(
       a { color: #ffb347; }
       a:hover { color: #ff6a00; }
       .link-fatality a, .link-fatality { color: #ffb347 !important; }
-      .link-plans a, .link-plans { color: #ff8a5b !important; }
-      .link-individual a, .link-individual { color: #ff6f3d !important; }
-      .link-disaster a, .link-disaster { color: #e18a0a !important; }
+      .link-plans a, .link-plans { color: #ff6a00 !important; }
+      .link-individual a, .link-individual { color: #d94b2b !important; }
+      .link-disaster a, .link-disaster { color: #c77700 !important; }
       .link-fatality strong, .link-plans strong, .link-individual strong, .link-disaster strong { color: #ffffff; }
       .link-fatality a:hover, .link-plans a:hover, .link-individual a:hover, .link-disaster a:hover { filter: brightness(1.1); }
       .tab-fatality-data { color: #ffb347; }
-      .tab-fatality-plans { color: #ff8a5b; }
-      .tab-fatality-individual { color: #ff6f3d; }
-      .tab-disaster { color: #e18a0a; }
+      .tab-fatality-plans { color: #ff6a00; }
+      .tab-fatality-individual { color: #d94b2b; }
+      .tab-disaster { color: #c77700; }
+      .tab-welcome { color: #ffffff; }
       .nav-tabs > li > a .tab-fatality-data { color: #ffb347; }
-      .nav-tabs > li > a .tab-fatality-plans { color: #ff8a5b; }
-      .nav-tabs > li > a .tab-fatality-individual { color: #ff6f3d; }
-      .nav-tabs > li > a .tab-disaster { color: #e18a0a; }
+      .nav-tabs > li > a .tab-fatality-plans { color: #ff6a00; }
+      .nav-tabs > li > a .tab-fatality-individual { color: #d94b2b; }
+      .nav-tabs > li > a .tab-disaster { color: #c77700; }
+      .nav-tabs > li > a .tab-welcome { color: #ffffff; }
       table { color: var(--text); }
       .shiny-output-error-validation { color: #ffb347; }
       .info-box { background: #101012; border: 1px dashed #333; padding: 10px; border-radius: 10px; margin-top: 10px; }
@@ -1087,7 +1089,7 @@ ui <- fluidPage(
       tabsetPanel(
         id = "main_tabs",
         tabPanel(
-          title = tags$span("Welcome", class = "tab-fatality"),
+          title = tags$span("Welcome", class = "tab-fatality tab-welcome"),
           value = "welcome",
           h3("Fire Department Preparedness Dashboard"),
           tags$p(
