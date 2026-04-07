@@ -1077,11 +1077,11 @@ ui <- fluidPage(
           value = "welcome",
           h3("Fire Department Preparedness Dashboard"),
           tags$p(
-            "Most firefighter fatalities are preventable tragedies. Explore actionable guidance to improve training, safety, and incident planning.",
+            "Most firefighter fatalities are preventable tragedies. Explore actionable guidance to improve training, safety, and incident planning on your department.",
             style = "color: var(--muted);"
           ),
           tags$p(
-            "A decision-support dashboard for fire department leadership that turns national fatality data into practical prevention and preparedness guidance.",
+            "This decision-support dashboard for fire department leadership turns national fatality, disaster, and census data into practical prevention and preparedness guidance.",
             style = "color: var(--muted);"
           ),
           tags$div(
