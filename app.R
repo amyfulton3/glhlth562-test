@@ -8,6 +8,7 @@ library(lubridate)
 library(httr)
 library(jsonlite)
 library(xml2)
+library(plotly)
 
 # ---- Configuration ----
 data_path <- "/Users/amyfulton/Downloads/ff_data.csv"
@@ -1146,6 +1147,27 @@ ui <- fluidPage(
           uiOutput("risk_overview")
         ),
         tabPanel(
+          title = tags$span("Geographic Trends", class = "tab-fatality"),
+          h3("Geographic Trends"),
+          tags$p(
+            "Compare your selected geography with national averages and similarly populated states. Metrics use population density, housing density, percent elderly, poverty rate, no-vehicle rate, and FEMA disaster exposure.",
+            style = "color: var(--muted);"
+          ),
+          tableOutput("benchmark_table"),
+          h3("Fatality Risk Map (per 100k)"),
+          plotlyOutput("benchmark_map", height = "360px"),
+          tags$div(
+            class = "card",
+            tags$div(class = "card-title", "Highest Fatality Rates (per 100k)"),
+            tableOutput("benchmark_top_states")
+          ),
+          tags$div(
+            class = "card",
+            tags$div(class = "card-title", "Highest Disaster Exposure (per 100k)"),
+            tableOutput("benchmark_top_disasters")
+          )
+        ),
+        tabPanel(
           title = tags$span("Personnel", class = "tab-fatality"),
           h3("Incident Type Odds by Personnel Type (Your Region)"),
           tags$p(
@@ -1293,27 +1315,6 @@ ui <- fluidPage(
           ),
           plotOutput("disaster_gauge_plot", height = "220px"),
           textOutput("disaster_risk_label")
-        ),
-        tabPanel(
-          title = tags$span("Benchmarking", class = "tab-disaster"),
-          h3("Benchmarking"),
-          tags$p(
-            "Compare your selected geography with national averages and similarly populated states. Metrics use population density, housing density, percent elderly, poverty rate, no-vehicle rate, and FEMA disaster exposure.",
-            style = "color: var(--muted);"
-          ),
-          tableOutput("benchmark_table"),
-          h3("Fatality Risk Map (per 100k)"),
-          plotOutput("benchmark_map", height = "360px"),
-          tags$div(
-            class = "card",
-            tags$div(class = "card-title", "Highest Fatality Rates (per 100k)"),
-            tableOutput("benchmark_top_states")
-          ),
-          tags$div(
-            class = "card",
-            tags$div(class = "card-title", "Highest Disaster Exposure (per 100k)"),
-            tableOutput("benchmark_top_disasters")
-          )
         ),
         tabPanel(
           title = tags$span("Disaster Risk & Preparedness", class = "tab-disaster"),
@@ -1953,18 +1954,32 @@ server <- function(input, output, session) {
     map_df %>% left_join(data, by = c("region" = "state_name"))
   })
 
-  output$benchmark_map <- renderPlot({
+  output$benchmark_map <- renderPlotly({
     df <- benchmark_map_data()
     if (is.null(df)) {
       return(
-        ggplot() +
-          theme_void(base_family = "Source Sans 3") +
-          annotate("text", x = 0, y = 0, label = "Map unavailable (install the maps package).", color = "#c7c0b8") +
-          xlim(-1, 1) + ylim(-1, 1)
+        plotly::plot_ly() %>%
+          plotly::layout(
+            annotations = list(list(
+              text = "Map unavailable (install the maps package).",
+              x = 0.5, y = 0.5, xref = "paper", yref = "paper",
+              showarrow = FALSE, font = list(color = "#c7c0b8")
+            ))
+          )
       )
     }
 
-    ggplot(df, aes(long, lat, group = group, fill = deaths_per_100k)) +
+    plot <- ggplot(
+      df,
+      aes(
+        long, lat, group = group,
+        fill = deaths_per_100k,
+        text = paste0(
+          "State: ", toupper(region), "<br>",
+          "Fatalities per 100k: ", ifelse(is.na(deaths_per_100k), "NA", round(deaths_per_100k, 2))
+        )
+      )
+    ) +
       geom_polygon(color = "#2a2a2f", size = 0.2) +
       scale_fill_gradient(
         low = "#1c1c1f",
@@ -1980,7 +1995,10 @@ server <- function(input, output, session) {
         plot.background = element_rect(fill = "transparent", color = NA),
         panel.background = element_rect(fill = "transparent", color = NA)
       ) +
-      labs(fill = "Fatalities\nper 100k")
+      labs(fill = "Fatalities per 100k (state)")
+
+    plotly::ggplotly(plot, tooltip = "text") %>%
+      plotly::layout(margin = list(l = 0, r = 0, t = 0, b = 0))
   })
 
   output$benchmark_top_states <- renderTable({

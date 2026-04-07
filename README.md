@@ -24,8 +24,8 @@ This is a **data product** (not a static report). It accepts user input about re
 
 ### 2) Ingestion
 
-- **Packages:** `readr`, `httr`, `xml2`, `jsonlite`, `dplyr`  
-  - Optional for maps: `maps` (enables the state‑level benchmark map)
+- **Packages:** `readr`, `httr`, `xml2`, `jsonlite`, `dplyr`, `plotly`  
+  - Optional for static maps: `maps` (used for state polygons; installed on Connect via manifest)
 - **Process:**  
   - On startup (and daily), the app checks the USFA RSS feed for updates.  
   - If a newer `pubDate` is found, it downloads the latest CSV and caches it locally in `data/fatalities.csv`.  
