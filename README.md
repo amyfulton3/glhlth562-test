@@ -41,7 +41,7 @@ This is a **data product** (not a static report). It accepts user input about re
   - top causes of death
   - incident mix over time
   - odds‑ratio–style comparisons by personnel type
-- **Modeling (fatality risk gauge):** Poisson regression on fatalities by state using population offset and predictors:
+- **Modeling (fatality risk gauge):** Poisson regression on fatalities by state using population offset and predictors. The gauge reports a **relative risk** scaled to the **national annual fatality rate per 100k** (so region vs. state comparisons are on the same per‑population basis):
   - log population density (urban vs. rural operational complexity)
   - log housing density (structure fire exposure)
   - FEMA disaster count (operational surge exposure)
