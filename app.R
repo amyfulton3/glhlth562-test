@@ -1731,9 +1731,11 @@ server <- function(input, output, session) {
     fit <- fatality_model_fit()
     if (is.null(data) || is.null(summary) || is.null(fit)) return(NA_real_)
     pred <- predict(fit, newdata = summary, type = "response")
-    base <- as.numeric(pred / mean(data$deaths, na.rm = TRUE))
-
     national_rate <- mean(data$deaths_per_100k, na.rm = TRUE)
+    pred_rate <- ifelse(summary$population > 0, (pred / summary$population) * 100000, NA_real_)
+    base <- as.numeric(ifelse(!is.na(pred_rate) && !is.na(national_rate) && national_rate > 0,
+                              pred_rate / national_rate, NA_real_))
+
     geo_rate <- summary$deaths_per_100k
     geo_adjust <- ifelse(!is.na(geo_rate) && !is.na(national_rate) && national_rate > 0,
                          geo_rate / national_rate, 1)
