@@ -1623,12 +1623,12 @@ server <- function(input, output, session) {
     data <- model_data()
     if (is.null(data)) return(NULL)
     data <- data %>%
-      filter(!is.na(population), population > 0, !is.na(log_density), !is.na(log_housing_density))
+      filter(!is.na(annual_deaths), !is.na(population), population > 0, !is.na(log_density), !is.na(log_housing_density))
     if (nrow(data) < 5) return(NULL)
 
     tryCatch(
       glm(
-        deaths ~ log_density + log_housing_density + disaster_count,
+        annual_deaths ~ log_density + log_housing_density + disaster_count,
         family = "poisson",
         offset = log(population),
         data = data
