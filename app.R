@@ -1738,11 +1738,6 @@ server <- function(input, output, session) {
                               pred_rate / national_rate, NA_real_))
 
     geo_adjust <- 1
-    if (input$geo_mode == "state") {
-      geo_rate <- summary$deaths_per_100k
-      geo_adjust <- ifelse(!is.na(geo_rate) && !is.na(national_rate) && national_rate > 0,
-                           geo_rate / national_rate, 1)
-    }
 
     exposure_adj <- switch(
       input$incident_exposure,
