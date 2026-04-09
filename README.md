@@ -4,6 +4,8 @@
 
 This is a **data product** (not a static report). It accepts user input about region, department makeup, incident types, and department challenges, then returns **tailored fatality risk summaries** and **LLM‑generated guidance**. It also includes incident‑report analysis, a monthly training plan generator, and a disaster‑preparedness module.
 
+**Live app:** `https://019d0762-ff21-8b3e-4699-26112368ec1d.share.connect.posit.cloud`
+
 ## Capabilities (Requirement Checklist)
 
 - **User input (required):** region/state, personnel makeup, incident types, equipment, and department comments.
@@ -42,7 +44,7 @@ This is a **data product** (not a static report). It accepts user input about re
   - top causes of death
   - incident mix over time
   - odds‑ratio–style comparisons by personnel type
-- **Modeling (fatality risk gauge):** Poisson regression on fatalities by state using population offset and predictors. The gauge reports a **relative risk** scaled to the **national annual fatality rate per 100k** (so region vs. state comparisons are on the same per‑population basis):
+- **Modeling (fatality risk gauge):** Poisson regression on **annual deaths** by state using population offset and predictors. The gauge reports a **relative risk** scaled to the **national annual fatality rate per 100k** (so region vs. state comparisons are on the same per‑population basis):
   - log population density (urban vs. rural operational complexity)
   - log housing density (structure fire exposure)
   - FEMA disaster count (operational surge exposure)
