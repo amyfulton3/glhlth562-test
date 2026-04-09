@@ -35,6 +35,7 @@ This is a **data product** (not a static report). It accepts user input about re
 ### 3) Processing
 
 - Column normalization, date parsing, and state→region mapping.
+- Non‑state locations (e.g., territories) are classified as **Other region** and are excluded from the 50‑state selector.
 - Incident types are standardized via heuristic classification.
 - Personnel type labels are normalized to fixed categories.
 - Aggregations for:
