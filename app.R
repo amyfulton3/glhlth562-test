@@ -700,7 +700,7 @@ state_to_region <- function(state_abbr) {
     state_abbr %in% midwest ~ "Midwest",
     state_abbr %in% south ~ "South",
     state_abbr %in% west ~ "West",
-    TRUE ~ NA_character_
+    TRUE ~ "Other region"
   )
 }
 
@@ -1436,6 +1436,7 @@ server <- function(input, output, session) {
     last_refresh_state(read_last_refresh())
     if (!all(is.na(df$state))) {
       states <- sort(unique(na.omit(df$state)))
+      states <- states[states %in% state.abb]
       updateSelectInput(session, "state", choices = c("All", states))
       updateSelectInput(session, "state", selected = "All")
     }
